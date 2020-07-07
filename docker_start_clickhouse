@@ -1,0 +1,9 @@
+
+SERVER: 
+    docker run -d --name clickhouse-server --ulimit nofile=262144:262144 -v /home/chile/clickhouse_database/preprocessed_configs/config.xml:/etc/clickhouse-server/config.xml yandex/clickhouse-server
+
+CLIENT:
+    docker run -it --rm --link clickhouse-server:clickhouse-server yandex/clickhouse-client --host clickhouse-server
+
+START
+    docker container start --detach-keys=first-start clickhouse-server 
