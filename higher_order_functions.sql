@@ -41,8 +41,24 @@ SELECT arrayReverseSplit((x, y) -> y, [1, 2, 3, 4, 5], [1, 0, 0, 1, 0]) AS res
                     --                 [[1],[2,3,4],[5]]
 
 
----------------------------
+
 SELECT arrayCount([1,2,3,4])
 
----------------------------
+
+--Returns 1 if there is at least one element in ‘arr’ for which ‘func’ returns something other than 0. Otherwise, it returns 0.
 SELECT arrayExists((x,y) -> y, [1,2,3],[1,1,1])
+
+
+
+SELECT arraySum(x -> x+1, [1,2])
+
+-- a running sum
+SELECT arrayCumSum([1, 2, 1, 1]) AS res -- [1,3,4, 5]
+
+
+-- 
+SELECT arrayCumSumNonNegative([1, 1, -4, 1,-1,2,3]) AS res -- [1,2,0,1,0,2,5]
+
+
+
+SELECT arraySort((x, y) -> y, ['hello', 'world'], [2, 1]);
