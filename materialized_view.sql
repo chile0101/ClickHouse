@@ -43,7 +43,7 @@ SELECT * FROM event
 CREATE TABLE event (
     userid String,
     event_name FixedString(1),
-    date_time DateTime DEFAULT now(),
+    date_time DateTime,
     value Float32
 ) ENGINE = MergeTree
 PARTITION BY toYYYYMM(date_time)
@@ -92,23 +92,25 @@ ORDER BY user, event, date
 ----------------------- Use Materialized View
 
 CREATE MATERIALIZED VIEW event_daily_mv
-ENGINE = SummingMergeTree
+ENGINE = SummingMergeTree()
 PARTITION BY toYYYYMM(day)
-ORDER BY (user, event, day)
+ORDER BY (userid, event_name, day)
 POPULATE
-AS SELECT
-    userid AS user,
-    event_name AS event ,
-    count() AS count,
-    toStartOfDay(date_time)  AS day
+AS  SELECT
+        userid ,
+        event_name  ,
+        countState() as count_value_state,
+        toStartOfDay(date_time) AS day
   
 FROM event 
-GROUP BY user, event, day
+GROUP BY userid, event_name, day
 
 ---------------------- select directly from the materialized view.
 
-SELECT * FROM event_daily_mv
-ORDER BY day, user, event
+SELECT  userid, event_name, countMerge(count_value_state) as count, day
+FROM event_daily_mv
+GROUP BY userid, event_name, day
+ORDER BY userid, event_name, day
 
 -------by month
 
@@ -137,15 +139,14 @@ ORDER BY userid
 
 CREATE TABLE event_daily (
     userid String,
-    day DateTime,
-    count UInt32,
+    count_value_state AggregateFunction(count, Float32),
     max_value_state AggregateFunction(max, Float32),
     min_value_state AggregateFunction(min, Float32),
     avg_value_state AggregateFunction(avg, Float32)
 )
 ENGINE = SummingMergeTree()
 PARTITION BY tuple()
-ORDER BY (userid, day)
+ORDER BY (userid)
 
 ---- ---------Create Materialized View 
 
@@ -153,34 +154,29 @@ ORDER BY (userid, day)
  TO event_daily
  AS SELECT
     userid,
-    toStartOfDay(date_time) as day,
-    count(*) as count,
+    countState(value) as count_value_state,
     maxState(value) as max_value_state,
     minState(value) as min_value_state,
     avgState(value) as avg_value_state
 FROM event 
-WHERE date_time >= toDate('2020-07-09 08:00:00')
-GROUP BY userid, day 
-ORDER BY userid, day
+GROUP BY userid 
+ORDER BY userid
 
 --- Start at here / let's insert new data 
 
-INSERT INTO event VALUES('0001','A','2020-07-08 08:00:00', rand()/100000000)
-INSERT INTO event VALUES('0001','B','2020-07-09 08:30:00', rand()/100000000)
+INSERT INTO event VALUES('0001','A','2020-07-08 08:00:00', rand()/100000000),
+                        ('0001','B','2020-07-09 08:30:00', rand()/100000000),
 
-
-INSERT INTO event VALUES('0001','A','2020-07-10 08:00:00', rand()/100000000)
-INSERT INTO event VALUES('0002','A','2020-07-10 08:30:00', rand()/100000000)
-
-INSERT INTO event VALUES('0001','A','2020-07-10 08:30:00', rand()/100000000)
-INSERT INTO event VALUES('0001','A','2020-07-10 08:35:00', rand()/100000000)
+                        ('0001','A','2020-07-10 08:00:00', rand()/100000000),
+                        ('0002','A','2020-07-10 08:30:00', rand()/100000000)
 
 
 -------- SELECT FROM VIEW
 
 SELECT
   userid,
-  sum(count) AS count,
+  countMerge(count_value_state) AS count,
+
   maxMerge(max_value_state) AS max,
   minMerge(min_value_state) AS min,
   avgMerge(avg_value_state) AS avg
