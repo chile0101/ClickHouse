@@ -1,0 +1,34 @@
+create table xxx(
+  A Int64,
+  Person Nested (
+    Name String,
+    value String
+  )
+) Engine=MergeTree
+order by A;
+
+
+insert into xxx values (1, ['a','b','c'], ['aaa','bbb','ccc'])
+
+insert into xxx values (1, ['a','b','c'], ['aaaa','bbb','ccc'])
+
+insert into xxx values (1, ['a','b','c'], ['aaaaa','bbb','ccc'])
+
+insert into xxx values (1, ['b','c'], ['bbb','ccc'])
+
+insert into xxx values (1, ['b','c','a'], ['bbb','ccc','aaaaa'])
+
+-- if name = a then name = 1
+
+select * from xxx
+array join Person
+
+
+alter table xxx update "Person.Name" = arrayMap(x -> if( x = 'a','1',x), "Person.Name" ) where 1
+
+
+
+-- IF Name = 'c' value = 333
+
+alter table xxx update "Person.value" = arrayMap((x,y) -> if(x = 'c', '333', y), "Person.Name", "Person.value") where 1 = 1
+

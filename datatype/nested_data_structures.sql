@@ -1,3 +1,8 @@
+
+
+
+
+
 CREATE TABLE queries(
     Period Date,
     QueryID UInt32,
@@ -6,10 +11,11 @@ CREATE TABLE queries(
         ErrorCode String,
         ErrorCnt UInt32
     )
-)Engine=MergeTree(Period,QueryID,8192)
+)Engine=MergeTree
+PARTITION BY toYYYYMM(Period)
+ORDER BY (QueryID)
 
 INSERT INTO queries VALUES ('2017-08-17',5,'SELECT foo FROM bar WHERE id=?',['1220','1230','1212'],[5,6,2])
-
 INSERT INTO queries VALUES ('2017-08-18',5,'SELECT foo FROM bar WHERE id=?',['1220','1240','1258'],[3,2,1])
 
 SELECT * FROM queries ARRAY JOIN Errors
@@ -27,7 +33,7 @@ GROUP BY
 
 SELECT 
     QueryID,
-    groupArray((ecode, cnt))
+    groupArray((ecode, cnt)) 
 FROM 
 (
     SELECT 

@@ -1,7 +1,8 @@
 CREATE DATABASE IF NOT EXISTS db_test
 
+USE db_test
 
-CREATE TABLE db_test.download (
+CREATE TABLE downloads (
     when DateTime,
     userid UInt32,
     bytes Float32
@@ -10,29 +11,43 @@ PARTITION BY toYYYYMM(when)
 ORDER BY (userid, when)
 
 
-INSERT INTO db_test.download 
+INSERT INTO downloads 
     SELECT 
         now() + number*60 as when,
-        25, 
+        30, 
         rand() %100000000
     FROM system.numbers
-    LIMIT 5000
+    LIMIT 100000
 
-SELECT COUNT() FROM db_test.download
-
+SELECT COUNT(*) FROM downloads -- 0.006
+SELECT uniq(when) FROM downloads -- 0.063 --0.017
 
 SELECT 
-    toStartOfDay(when) AS day,
+    toStartOfDay(when) as day,
     userid,
-    count() AS downloads,
-    sum(bytes) AS bytes
-FROM db_test.download
-GROUP BY userid, day 
-ORDER BY userid, day 
+    count() as downloads,
+    sum(bytes) as bytes
+FROM downloads 
+GROUP BY day, userid
+ORDER BY day, userid,bytes
+-- 0.09
+
 
 
 CREATE MATERIALIZED VIEW download_daily_mv
 ENGINE = SummingMergeTree
+PARTITION BY toYYYYMM(day)
+ORDER BY (day,userid)
+POPULATE
+AS SELECT 
+        toStartOfDay(when) as day,
+        userid,
+        count() AS downloads,
+        sum(bytes) AS bytes
+    FROM downloads 
+    GROUP BY userid, day  
+
+
 
 
 
@@ -50,7 +65,7 @@ PARTITION BY toYYYYMM(date_time)
 ORDER BY (userid, date_time)
 
 
-INSERT INTO event VALUES('0001','A','2020-07-06 08:00:00', rand()/100000000), 
+INSERT INTO event VALUES('0001','A','2020-07-06 08:00:00', rand()/100000000),
                         ('0001','A','2020-07-06 08:30:00', rand()/100000000), 
                         ('0001','A','2020-07-06 09:00:00' ,rand()/100000000), 
                         ('0001','B','2020-07-06 08:00:00', rand()/100000000),
@@ -176,7 +191,6 @@ INSERT INTO event VALUES('0001','A','2020-07-08 08:00:00', rand()/100000000),
 SELECT
   userid,
   countMerge(count_value_state) AS count,
-
   maxMerge(max_value_state) AS max,
   minMerge(min_value_state) AS min,
   avgMerge(avg_value_state) AS avg
@@ -341,3 +355,193 @@ ORDER BY (userid, day)
     avgState(value) as avg_value_state
 FROM event 
 GROUP BY userid, day 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+-----------------------Test lai
+
+CREATE TABLE downloads (
+    when DateTime,
+    userid UInt32,
+    bytes Float32
+) ENGINE=MergeTree
+PARTITION BY toYYYYMM(when)
+ORDER BY (userid, when)
+
+
+INSERT INTO downloads 
+    SELECT 
+        now() + number*60 as when,
+        30, 
+        rand() %100000000
+    FROM system.numbers
+    LIMIT 100000
+
+SELECT COUNT(*) FROM downloads -- 0.006
+SELECT uniq(when) FROM downloads -- 0.063 --0.017
+
+SELECT 
+    toStartOfDay(when) as day,
+    userid,
+    count() as downloads,
+    sum(bytes) as bytes
+FROM downloads 
+GROUP BY day, userid
+ORDER BY day, userid,bytes
+-- 0.09
+
+
+-- target
+CREATE TABLE download_daily(
+    day DateTime,
+    userid UInt32,
+    count UInt64,
+    sum_value_state AggregateFunction(sum, Float32)
+)ENGINE = SummingMergeTree()
+PARTITION BY tuple()
+ORDER BY (userid, day)
+
+
+CREATE MATERIALIZED VIEW download_daily_mv 
+TO download_daily
+AS SELECT 
+    toStartOfDay(when) as day,
+    userid,
+    count(*) as count,
+    sumState(bytes) as sum_value_state
+    FROM downloads 
+    GROUP BY (userid,day)
+    ORDER BY (userid,day)
+
+
+-- insert du lieu truoc do
+INSERT INTO download_daily
+SELECT
+  toStartOfDay(when) as day,
+  userid,
+  count() as count,
+  sumState(bytes) as sum_value_state
+FROM downloads
+GROUP BY userid, day
+ORDER BY userid, day
+
+
+-- select 
+SELECT
+  userid,
+  count
+FROM download_daily
+GROUP BY userid
+ORDER BY userid
+
+
+ sumMerge(sum_value_state)
+
+-- CREATE MATERIALIZED VIEW download_daily_mv
+-- ENGINE = SummingMergeTree
+-- PARTITION BY toYYYYMM(day)
+-- ORDER BY (day,userid)
+-- POPULATE
+-- AS SELECT 
+--         toStartOfDay(when) as day,
+--         userid,
+--         count() AS downloads,
+--         sum(bytes) AS bytes
+--     FROM downloads 
+--     GROUP BY userid, day  
+
+
+-----------------------------------------------------------
+
+CREATE TABLE counter (
+  when DateTime DEFAULT now(),
+  device UInt32,
+  value Float32,
+  num_pros Nested(
+    keys String,
+    vals UInt32
+  )
+) ENGINE=MergeTree
+PARTITION BY toYYYYMM(when)
+ORDER BY (device, when)
+
+INSERT INTO counter values 
+    ('2017-01-01 00:00:00', 1,10, ['total_time'],[12]),
+    ('2017-01-01 00:00:00', 1,10, ['total_time'],[10]),
+    ('2017-01-02 00:00:00', 1,20, ['total_time'],[8]),
+    ('2017-01-02 00:00:00', 1,30, ['total_time'],[16]),
+    ('2017-01-03 00:00:00', 1,30, ['total_time'],[11]),
+
+    ('2017-01-01 00:00:00', 2,10,['total_time'],[9]),
+    ('2017-01-01 00:00:00', 2,10,['total_time'],[12]),
+    ('2017-01-02 00:00:00', 2,20,['total_time'],[2]),
+    ('2017-01-02 00:00:00', 2,30,['total_time'],[5]),
+    ('2017-01-03 00:00:00', 2,20,['total_time'],[6])
+
+
+
+create table counter_daily(
+    day DateTime,
+    device UInt32,
+    count UInt64,
+    max_value_state AggregateFunction(max, Float32),
+    min_value_state AggregateFunction(min, Float32),
+    avg_value_state AggregateFunction(avg, Float32)
+
+) Engine = SummingMergeTree()
+PARTITION BY tuple()
+ORDER BY (device,day)
+------------------------------------------------------
+create materialized view counter_daily_mv
+to counter_daily 
+as  select   
+        toStartOfDay(when) as day,
+        device,
+        count(*) as count,
+        maxState(value) AS max_value_state,
+        minState(value) AS min_value_state,
+        avgState(value) AS avg_value_state
+    from counter
+    group by device, day
+    order by device, day
+
+
+INSERT INTO counter values ('2018-01-01 00:00:00', 1,10)
+
+-----------------------------------insert data before
+insert into counter_daily 
+    select 
+        toStartOfDay(when) as day,
+        device,
+        count(*) as count,
+        maxState(value) AS max_value_state,
+        minState(value) AS min_value_state,
+        avgState(value) AS avg_value_state
+
+    from counter
+    where when < now()
+    group by device, day 
+--------------------------------------
+
+select 
+    device,
+    sum(count) as count,
+    maxMerge(max_value_state) as max,
+    minMerge(min_value_state) as min,
+    avgMerge(avg_value_state) as avg
+from counter_daily
+group by device
+order by device
+
+
