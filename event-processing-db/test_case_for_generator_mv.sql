@@ -1,8 +1,6 @@
+----------------------------------------------------PROFILE
 
-
--------------------------------------------------------------------------------------
-
-CREATE TABLE user_profile
+CREATE TABLE IF NOT EXISTS user_profile
 (
     `tenant_id` UInt16,
     `user_id` String,
@@ -14,7 +12,9 @@ CREATE TABLE user_profile
     `created_at` DateTime
 )
 ENGINE = MergeTree()
+PARTITION BY toYYYYMM(created_at)
 ORDER BY (tenant_id, anonymous_id, created_at);
+
 
 
 insert into user_profile values
@@ -28,8 +28,10 @@ insert into user_profile values
 
 insert into user_profile values
 (2, 'u1', 'a3', [], ['gender','location'], ['m','QN'], ['total_value','last_order_at'], [3,toUnixTimestamp('2020-08-03 11:02:00')], [], [], now());
+
 insert into user_profile values
 (1, 'u1', 'a4', [], ['gender'], ['m'], ['total_value','last_order_at'], [400, toUnixTimestamp('2020-08-02 09:45:08')], [], [], now());
+
 insert into user_profile values
 (2, 'u1', 'a5', [], ['gender'], ['m'], ['total_value','last_order_at'], [600.05,toUnixTimestamp('2020-08-01 08:30:00')], [], [], now());
 
@@ -51,10 +53,10 @@ insert into user_profile
     from system.numbers
     limit 900000,100000
     limit 1000000
+;
 
 
-
-CREATE TABLE user_profile_final
+CREATE TABLE IF NOT EXISTS user_profile_final
 (
     `tenant_id` UInt16,
     `user_id` AggregateFunction(argMax, String, DateTime),
@@ -69,11 +71,11 @@ CREATE TABLE user_profile_final
     `created_at_final` SimpleAggregateFunction(max, DateTime)
 )
 ENGINE = AggregatingMergeTree()
-ORDER BY (tenant_id, anonymous_id);
+ORDER BY (tenant_id, anonymous_id)
+;
 
 
-
-CREATE MATERIALIZED VIEW user_profile_final_mv TO user_profile_final AS
+CREATE MATERIALIZED VIEW IF NOT EXISTS user_profile_final_mv TO user_profile_final AS
 SELECT
     tenant_id,
     argMaxState(user_id, created_at) AS user_id,
@@ -89,33 +91,76 @@ SELECT
 FROM user_profile
 GROUP BY
     tenant_id,
-    anonymous_id  ;
+    anonymous_id
+;
 
 
-CREATE TABLE segments
-(
-    `segment_id` String,
-    `users` Array(String)
-)
-ENGINE = MergeTree()
-ORDER BY segment_id;
 
-insert into segments values ('s0', ['a0','a1','a2']);
-insert into segments values ('s1', ['a0','a1','a2','a3','a4','a5']);
-insert into segments values ('s2', ['a2', 'a3']);
-insert into segments values ('s3', ['a1', 'a3']);
 
-insert into segments values ('s1', ['a1', 'a3']);
+--------------------------------------------------SEGMENT
+
+CREATE TABLE IF NOT EXISTS segments(
+    tenant_id UInt16,
+    segment_id String,
+    users Array(String),
+    at DateTime
+) ENGINE = MergeTree()
+PARTITION BY toYYYYMM(at)
+ORDER BY (tenant_id, segment_id)
+;
+
+CREATE TABLE IF NOT EXISTS segments_final(
+    tenant_id UInt16,
+    segment_id String,
+    users AggregateFunction(argMax, Array(String), DateTime),
+    at_final SimpleAggregateFunction(max, DateTime)
+) ENGINE = AggregatingMergeTree()
+ORDER BY (tenant_id, segment_id)
+;
+
+CREATE MATERIALIZED VIEW IF NOT EXISTS segments_final_mv TO segments_final AS
+SELECT
+       tenant_id,
+       segment_id,
+       argMaxState(users, at) AS users,
+       max(at) as at_final
+FROM segments
+GROUP BY tenant_id, segment_id
+;
+
+
+
+insert into segments values (1, 's0', ['a0','a2','a4'],now());
+insert into segments values (1,'s1', ['a0'],now());
+insert into segments values (2,'s2', ['a1', 'a3'], now());
+insert into segments values (2, 's3', ['a1', 'a3','a5'], now());
+
+
+insert into segments values (2, 's3', ['a3'], now());
 --test
-insert into segments values ('s4', ['a6', 'a7']);
-insert into segments values ('s5', ['a8', 'a9']);
+insert into segments values (1, 's4', ['a6', 'a7'], now());
+insert into segments values (1, 's5', ['a8', 'a9'], now());
 
----------------insert multi user
+SELECT tenant_id,
+       segment_id
+FROM
+(
+    SELECT tenant_id,
+           segment_id,
+           argMaxMerge(users) AS users
+    FROM segments_final
+    GROUP BY tenant_id, segment_id
+) ARRAY JOIN users
+;
 
 
 
 
-CREATE TABLE segment_agg
+truncate table segments;
+truncate table segments_final;
+---------------------------------------------------SEGMENT_AGG
+
+CREATE TABLE IF NOT EXISTS segment_agg
 (   `tenant_id` UInt16,
     `segment_id` String,
     `time_stamp` DateTime,
@@ -124,14 +169,11 @@ CREATE TABLE segment_agg
 )
 ENGINE = MergeTree()
 PARTITION BY toYYYYMM(time_stamp)
-ORDER BY (tenant_id, segment_id, metric_name);
+ORDER BY (tenant_id, segment_id, metric_name)
+;
 
 
-
-
-
---------------- segment last point convert replacing -> aggregate merge tree.
-CREATE TABLE segment_agg_final
+CREATE TABLE IF NOT EXISTS segment_agg_final
 (
     `tenant_id` UInt16,
     `segment_id` String,
@@ -142,10 +184,11 @@ CREATE TABLE segment_agg_final
 )
 ENGINE = AggregatingMergeTree()
 PARTITION BY tuple()
-ORDER BY (tenant_id, segment_id, metric_name);
+ORDER BY (tenant_id, segment_id, metric_name)
+;
 
 
-CREATE MATERIALIZED VIEW segment_agg_final_mv TO segment_agg_final AS
+CREATE MATERIALIZED VIEW IF NOT EXISTS segment_agg_final_mv TO segment_agg_final AS
 SELECT
     tenant_id,
     segment_id,
@@ -157,10 +200,12 @@ FROM segment_agg
 GROUP BY
     tenant_id,
     segment_id,
-    metric_name;
+    metric_name
+;
 
---------------------GENDER
-CREATE MATERIALIZED VIEW segment_agg_gender_mv TO segment_agg AS
+--------------------------------------------GENDER
+drop table segment_agg_gender_mv;
+CREATE MATERIALIZED VIEW IF NOT EXISTS segment_agg_gender_mv TO segment_agg AS
 SELECT
     tenant_id,
     segment_id,
@@ -171,18 +216,35 @@ SELECT
 FROM
 (
     SELECT
-        tenant_id,
-        segment_id,
-        p.cate,
+        sf.tenant_id,
+        sf.segment_id,
+        pf.cate,
         count() AS count
-    FROM segments
-    ARRAY JOIN users
+    FROM
+    (
+        SELECT
+            tenant_id,
+            segment_id,
+            users
+        FROM
+        (
+            SELECT
+                tenant_id,
+                segment_id,
+                argMaxMerge(users) AS users
+            FROM segments_final
+            GROUP BY
+                tenant_id,
+                segment_id
+        )
+        ARRAY JOIN users
+    ) AS sf
     INNER JOIN
     (
         SELECT
             tenant_id,
             anonymous_id,
-            pf.str_vals[indexOf(pf.str_keys, 'gender')] AS cate
+            str_vals[indexOf(str_keys, 'gender')] AS cate
         FROM
         (
             SELECT
@@ -194,8 +256,8 @@ FROM
             GROUP BY
                 tenant_id,
                 anonymous_id
-        ) AS pf
-    ) AS p ON p.anonymous_id = segments.users
+        )
+    ) AS pf ON (sf.users = pf.anonymous_id) AND (sf.tenant_id = pf.tenant_id)
     WHERE cate != ''
     GROUP BY
         tenant_id,
@@ -207,7 +269,205 @@ FROM
 )
 GROUP BY
     tenant_id,
-    segment_id;
+    segment_id
+;
+
+----------------------------------------------REVENUE
+drop table segment_agg_revenue_mv;
+CREATE MATERIALIZED VIEW IF NOT EXISTS segment_agg_revenue_mv TO segment_agg AS
+SELECT
+    sf.tenant_id,
+    sf.segment_id,
+    now() AS time_stamp,
+    'revenue' AS metric_name,
+    ['max', 'avg', 'med', 'min'] AS `metrics_agg.keys`,
+    [max(v), avg(v), median(v), min(v)] AS `metrics_agg.vals`
+FROM
+(
+    SELECT
+        tenant_id,
+        segment_id,
+        users
+    FROM
+    (
+        SELECT
+            tenant_id,
+            segment_id,
+            argMaxMerge(users) AS users
+        FROM segments_final
+        GROUP BY
+            tenant_id,
+            segment_id
+    )
+    ARRAY JOIN users
+) AS sf
+INNER JOIN
+(
+    SELECT
+        tenant_id,
+        anonymous_id,
+        num_vals[indexOf(num_keys, 'total_value')] AS v
+    FROM
+    (
+        SELECT
+            tenant_id,
+            anonymous_id,
+            argMaxMerge(num_properties.keys) AS num_keys,
+            argMaxMerge(num_properties.vals) AS num_vals
+        FROM user_profile_final
+        GROUP BY
+                 tenant_id,
+                 anonymous_id
+    )
+) AS pf ON (sf.users = pf.anonymous_id) AND (sf.tenant_id = pf.tenant_id)
+WHERE v > 0
+GROUP BY
+    tenant_id,
+    segment_id
+;
+
+
+
+--------------------Days since last order
+drop table segment_agg_days_since_last_order_mv;
+CREATE MATERIALIZED VIEW IF NOT EXISTS segment_agg_days_since_last_order_mv TO segment_agg AS
+SELECT
+    tenant_id,
+    segment_id,
+    now() AS time_stamp,
+    'days_since_last_order' AS metric_name,
+    ['max', 'avg', 'med', 'min'] AS `metrics_agg.keys`,
+    [toFloat64(max(days)), avg(days), median(days), toFloat64(min(days))] AS `metrics_agg.vals`
+FROM
+(
+    SELECT
+        sf.tenant_id,
+        sf.segment_id,
+        round((toUnixTimestamp(now()) - t) / ((24 * 60) * 60)) AS days
+    FROM
+    (
+        SELECT
+            tenant_id,
+            segment_id,
+            users
+        FROM
+        (
+            SELECT
+                tenant_id,
+                segment_id,
+                argMaxMerge(users) AS users
+            FROM segments_final
+            GROUP BY
+                tenant_id,
+                segment_id
+        )
+        ARRAY JOIN users
+    ) AS sf
+    INNER JOIN
+    (
+        SELECT
+            tenant_id,
+            anonymous_id,
+            num_vals[indexOf(num_keys, 'last_order_at')] AS t
+        FROM
+        (
+            SELECT
+                tenant_id,
+                anonymous_id,
+                argMaxMerge(num_properties.keys) AS num_keys,
+                argMaxMerge(num_properties.vals) AS num_vals
+            FROM user_profile_final
+            GROUP BY
+                     tenant_id,
+                     anonymous_id
+        )
+    ) AS pf ON (sf.users = pf.anonymous_id) AND (sf.tenant_id = pf.tenant_id)
+    WHERE t >= 0
+)
+GROUP BY
+    tenant_id,
+    segment_id
+;
+
+
+----------------------------------------------VIEW
+CREATE VIEW IF NOT EXISTS segment_agg_final_v
+AS SELECT
+        tenant_id,
+        segment_id,
+        max(time_stamp_final) as time_stamp,
+        metric_name,
+        argMaxMerge(metrics_agg.keys) as metrics_agg_keys,
+        argMaxMerge(metrics_agg.vals) as metrics_agg_vals
+FROM segment_agg_final
+GROUP BY tenant_id, segment_id, metric_name
+ORDER BY tenant_id, segment_id, metric_name
+;
+
+SELECT * FROM segment_agg_final_v;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+--- select
+select * from segments;
+select * from segment_agg;
+select * from segments_final;
+
+
+
+
+
+where tenant_id = 1 and segment_id = 's0' and metric_name = 'gender'
+
+
+-- drop
+drop table user_profile_final_mv;
+drop table user_profile_final;
+drop table user_profile;
+
+drop table segments;
+drop table segment_agg;
+drop table segment_agg_final;
+drop table segment_agg_final_mv;
+drop table segment_agg_gender_mv;
+drop table segment_agg_revenue_mv;
+drop table segment_agg_day_since_last_order_mv;
+
+-- truncate
+truncate table user_profile_final_mv;
+truncate table user_profile_final;
+truncate table user_profile;
+
+truncate table segments;
+truncate table segments_final;
+truncate table segment_agg;
+truncate table segment_agg_final;
+truncate table segment_agg_final_mv;
+truncate table segment_agg_gender_mv;
+truncate table segment_agg_revenue_mv;
+truncate table segment_agg_day_since_last_order_mv;
+
+
+
+
+
 
 
 
@@ -240,334 +500,6 @@ limit 10;
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
----------------------REVENUE
-CREATE MATERIALIZED VIEW segment_agg_revenue_mv TO segment_agg AS
-SELECT
-    tenant_id,
-    segment_id,
-    now() AS time_stamp,
-    'revenue' AS metric_name,
-    ['max', 'avg', 'med', 'min'] AS `metrics_agg.keys`,
-    [max(v), avg(v), median(v), min(v)] AS `metrics_agg.vals`
-FROM
-(
-    SELECT *
-    FROM segments
-    ARRAY JOIN users
-) AS s
-INNER JOIN
-(
-    SELECT
-        tenant_id,
-        anonymous_id,
-        pf.num_vals[indexOf(pf.num_keys, 'total_value')] AS v
-    FROM
-    (
-        SELECT
-            tenant_id,
-            anonymous_id,
-            argMaxMerge(num_properties.keys) AS num_keys,
-            argMaxMerge(num_properties.vals) AS num_vals
-        FROM user_profile_final
-        GROUP BY
-            tenant_id,
-            anonymous_id
-    ) AS pf
-) AS p ON s.users = p.anonymous_id
-WHERE (v > 0)
-GROUP BY tenant_id, segment_id;
-
-
-
---------------------Days since last order
-CREATE MATERIALIZED VIEW segment_agg_days_since_last_order_mv TO segment_agg AS
-SELECT
-    tenant_id,
-    segment_id,
-    now() AS time_stamp,
-    'days_since_last_order' AS metric_name,
-    ['max', 'avg', 'med', 'min'] AS `metrics_agg.keys`,
-    [toFloat64(max(days)), avg(days), median(days), toFloat64(min(days))] AS `metrics_agg.vals`
-FROM
-(
-    SELECT
-        tenant_id,
-        anonymous_id,
-        segment_id,
-        round((toUnixTimestamp(now()) - t)/(24*60*60)) AS days
-    FROM segments
-    ARRAY JOIN users
-    INNER JOIN
-    (
-        SELECT
-            tenant_id,
-            anonymous_id,
-            pf.num_vals[indexOf(pf.num_keys, 'last_order_at')] AS t
-        FROM
-        (
-            SELECT
-                tenant_id,
-                anonymous_id,
-                argMaxMerge(num_properties.keys) AS num_keys,
-                argMaxMerge(num_properties.vals) AS num_vals
-            FROM user_profile_final
-            GROUP BY
-                tenant_id,
-                anonymous_id
-        ) AS pf
-    ) AS p ON p.anonymous_id = segments.users
-    WHERE t >= 0
-)
-GROUP BY tenant_id, segment_id;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
---- select
-select * from segments;
-select * from segment_agg;
-
-
-
-select tenant_id,
-        segment_id,
-       max(time_stamp_final),
-       metric_name,
-       argMaxMerge(metrics_agg.keys),
-       argMaxMerge(metrics_agg.vals)
-from segment_agg_final
-group by tenant_id, segment_id, metric_name
-order by  tenant_id, segment_id, metric_name;
-
-
-where tenant_id = 1 and segment_id = 's0' and metric_name = 'gender'
-
-
--- drop
-drop table user_profile_final_mv;
-drop table user_profile_final;
-drop table user_profile;
-
-drop table segments;
-drop table segment_agg;
-drop table segment_agg_final;
-drop table segment_agg_final_mv;
-drop table segment_agg_gender_mv;
-drop table segment_agg_revenue_mv;
-drop table segment_agg_day_since_last_order_mv;
-
--- truncate
-truncate table user_profile_final_mv;
-truncate table user_profile_final;
-truncate table user_profile;
-
-truncate table segments;
-truncate table segment_agg;
-truncate table segment_agg_final;
-truncate table segment_agg_final_mv;
-truncate table segment_agg_gender_mv;
-truncate table segment_agg_revenue_mv;
-truncate table segment_agg_day_since_last_order_mv;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
------------------------da lay vao python
-
-CREATE MATERIALIZED VIEW segment_agg_gender_mv TO segment_agg AS
-SELECT
-    tenant_id,
-    segment_id,
-    now() AS time_stamp,
-    'gender' AS metric_name,
-    groupArray(cate) AS `metrics_agg.keys`,
-    groupArray(count) AS `metrics_agg.vals`
-FROM
-(
-    SELECT
-        tenant_id,
-        segment_id,
-        p.cate,
-        count() AS count
-    FROM segments
-    ARRAY JOIN users
-    INNER JOIN
-    (
-        SELECT
-            tenant_id,
-            anonymous_id,
-            pf.str_vals[indexOf(pf.str_keys, 'gender')] AS cate
-        FROM
-        (
-            SELECT
-                tenant_id,
-                anonymous_id,
-                argMaxMerge(str_properties.keys) AS str_keys,
-                argMaxMerge(str_properties.vals) AS str_vals
-            FROM user_profile_final
-            GROUP BY
-                tenant_id,
-                anonymous_id
-        ) AS pf
-    ) AS p ON p.anonymous_id = segments.users
-    WHERE cate != ''
-    GROUP BY
-        tenant_id,
-        segment_id,
-        cate
-    ORDER BY
-        count DESC,
-        cate ASC
-)
-GROUP BY
-    tenant_id,
-    segment_id;
-
-
-
-
--------------revenue : da lay vao python
-
-CREATE MATERIALIZED VIEW segment_agg_revenue_mv TO segment_agg AS
-SELECT
-    tenant_id,
-    segment_id,
-    now() AS time_stamp,
-    'revenue' AS metric_name,
-    ['max', 'avg', 'med', 'min'] AS `metrics_agg.keys`,
-    [max(v), avg(v), median(v), min(v)] AS `metrics_agg.vals`
-FROM
-(
-    SELECT *
-    FROM segments
-    ARRAY JOIN users
-) AS s
-INNER JOIN
-(
-    SELECT
-        tenant_id,
-        anonymous_id,
-        pf.num_vals[indexOf(pf.num_keys, 'total_value')] AS v
-    FROM
-    (
-        SELECT
-            tenant_id,
-            anonymous_id,
-            argMaxMerge(num_properties.keys) AS num_keys,
-            argMaxMerge(num_properties.vals) AS num_vals
-        FROM user_profile_final
-        GROUP BY
-            tenant_id,
-            anonymous_id
-    ) AS pf
-) AS p ON s.users = p.anonymous_id
-WHERE (v > 0)
-GROUP BY tenant_id, segment_id;
-
-
---------------------day_since_last_order mv : da lay vao python
-CREATE MATERIALIZED VIEW segment_agg_day_since_last_order_mv TO segment_agg AS
-SELECT
-    tenant_id,
-    segment_id,
-    now() AS time_stamp,
-    'day_since_last_order' AS metric_name,
-    ['max', 'avg', 'med', 'min'] AS `metrics_agg.keys`,
-    [toFloat64(max(days)), avg(days), median(days), toFloat64(min(days))] AS `metrics_agg.vals`
-FROM
-(
-    SELECT
-        tenant_id,
-        anonymous_id,
-        segment_id,
-        round((toUnixTimestamp(now()) - t)/(24*60*60)) AS days
-    FROM segments
-    ARRAY JOIN users
-    INNER JOIN
-    (
-        SELECT
-            tenant_id,
-            anonymous_id,
-            pf.num_vals[indexOf(pf.num_keys, 'last_order_at')] AS t
-        FROM
-        (
-            SELECT
-                tenant_id,
-                anonymous_id,
-                argMaxMerge(num_properties.keys) AS num_keys,
-                argMaxMerge(num_properties.vals) AS num_vals
-            FROM user_profile_final
-            GROUP BY
-                tenant_id,
-                anonymous_id
-        ) AS pf
-    ) AS p ON p.anonymous_id = segments.users
-    WHERE t >= 0
-)
-GROUP BY tenant_id, segment_id;
 
 
 
