@@ -7,5 +7,12 @@
       <jdbc-driver>ru.yandex.clickhouse.ClickHouseDriver</jdbc-driver>
       <jdbc-url>jdbc:clickhouse://localhost:8123</jdbc-url>
     </data-source>
+    <data-source source="LOCAL" name="primedata_db" uuid="24d7ee75-da71-4a9d-ae00-ccdd2dd44e9a">
+      <driver-ref>clickhouse</driver-ref>
+      <synchronize>true</synchronize>
+      <remarks>connect remote server</remarks>
+      <jdbc-driver>ru.yandex.clickhouse.ClickHouseDriver</jdbc-driver>
+      <jdbc-url>jdbc:clickhouse://20.10.23.165:8123/primedata</jdbc-url>
+    </data-source>
   </component>
 </project>

@@ -2,18 +2,17 @@
 
 CREATE TABLE IF NOT EXISTS user_profile
 (
-    `tenant_id` UInt16,
-    `user_id` String,
     `anonymous_id` String,
-    `identifies` Array(String),
+    `tenant_id` UInt16,
+    `identity`       Nested(    keys String,     vals String),
     `str_properties` Nested(    keys String,     vals String),
     `num_properties` Nested(    keys String,     vals Float32),
     `arr_properties` Nested(    keys String,     vals Array(String)),
-    `created_at` DateTime
+    `at` DateTime
 )
 ENGINE = MergeTree()
-PARTITION BY toYYYYMM(created_at)
-ORDER BY (tenant_id, anonymous_id, created_at);
+PARTITION BY toYYYYMM(at)
+ORDER BY (tenant_id, anonymous_id, at);
 
 
 
@@ -38,37 +37,39 @@ insert into user_profile values
 -- test multi user
 
 insert into user_profile
-    with [['male','female'] as genders, ['HoChiMinh','HaNoi','DaNang', 'VungTau','CanTho'] as locations, ['facebook','google','tiktok'] as sources]
+    with [['male','female'] as genders, ['HoChiMinh','HaNoi','DaNang', 'VungTau','CanTho'] as locations, ['facebook','google','youtube'] as sources]
     select
-           rand(1)%10+1 as tenant_id,
-           'u' as user_id,
            concat('a', toString(number)) as anonymous_id,
-           [] as identifies,
-           ['gender','location_city', 'source'] as `str_properties.keys`,
+           rand(1)%1+1 as tenant_id,
+           ['user_id'] as `identity.keys`,
+           [concat('user-',randomPrintableASCII(5))] as `identity.vals`,
+           ['gender','location_city', 'context_campaign_source'] as `str_properties.keys`,
            [genders[rand(2)%length(genders)+1], locations[rand(3)%length(locations)+1], sources[rand(4)%length(sources)+1] ] as `str_properties.vals`,
-           ['total_values', 'last_order_at'] as `num_properties.keys`,
+           ['total_value', 'last_order_at'] as `num_properties.keys`,
            [rand(5)%300, toUnixTimestamp('2016-01-01 00:00:00')+number*60] as `num_properties.vals`,
            [''],[[]],
            now()
     from system.numbers
-    limit 900000,100000
+    limit 100
     limit 1000000
+    limit 900000,100000
+
 ;
 
 
 CREATE TABLE IF NOT EXISTS user_profile_final
 (
-    `tenant_id` UInt16,
-    `user_id` AggregateFunction(argMax, String, DateTime),
     `anonymous_id` String,
-    `identifies` AggregateFunction(argMax, Array(String), DateTime),
+    `tenant_id` UInt16,
+    `identity.keys` AggregateFunction(argMax, Array(String), DateTime),
+    `identity.vals` AggregateFunction(argMax, Array(String), DateTime),
     `str_properties.keys` AggregateFunction(argMax, Array(String), DateTime),
     `str_properties.vals` AggregateFunction(argMax, Array(String), DateTime),
     `num_properties.keys` AggregateFunction(argMax, Array(String), DateTime),
     `num_properties.vals` AggregateFunction(argMax, Array(Float32), DateTime),
     `arr_properties.keys` AggregateFunction(argMax, Array(String), DateTime),
     `arr_properties.vals` AggregateFunction(argMax, Array(Array(String)), DateTime),
-    `created_at_final` SimpleAggregateFunction(max, DateTime)
+    `at_final` SimpleAggregateFunction(max, DateTime)
 )
 ENGINE = AggregatingMergeTree()
 ORDER BY (tenant_id, anonymous_id)
@@ -77,17 +78,17 @@ ORDER BY (tenant_id, anonymous_id)
 
 CREATE MATERIALIZED VIEW IF NOT EXISTS user_profile_final_mv TO user_profile_final AS
 SELECT
-    tenant_id,
-    argMaxState(user_id, created_at) AS user_id,
     anonymous_id,
-    argMaxState(identifies, created_at) AS identifies,
-    argMaxState(str_properties.keys, created_at) AS `str_properties.keys`,
-    argMaxState(str_properties.vals, created_at) AS `str_properties.vals`,
-    argMaxState(num_properties.keys, created_at) AS `num_properties.keys`,
-    argMaxState(num_properties.vals, created_at) AS `num_properties.vals`,
-    argMaxState(arr_properties.keys, created_at) AS `arr_properties.keys`,
-    argMaxState(arr_properties.vals, created_at) AS `arr_properties.vals`,
-    max(created_at) AS created_at_final
+    tenant_id,
+    argMaxState(identity.keys, at) AS `identity.keys`,
+    argMaxState(identity.vals, at) AS `identity.vals`,
+    argMaxState(str_properties.keys, at) AS `str_properties.keys`,
+    argMaxState(str_properties.vals, at) AS `str_properties.vals`,
+    argMaxState(num_properties.keys, at) AS `num_properties.keys`,
+    argMaxState(num_properties.vals, at) AS `num_properties.vals`,
+    argMaxState(arr_properties.keys, at) AS `arr_properties.keys`,
+    argMaxState(arr_properties.vals, at) AS `arr_properties.vals`,
+    max(at) AS at_final
 FROM user_profile
 GROUP BY
     tenant_id,
@@ -95,8 +96,24 @@ GROUP BY
 ;
 
 
+CREATE VIEW IF NOT EXISTS user_profile_final_v AS
+SELECT
+     anonymous_id,
+     tenant_id ,
+    argMaxMerge(identity.keys) AS identity_keys,
+    argMaxMerge(identity.vals) AS identity_vals,
+    argMaxMerge(str_properties.keys) AS str_pros_keys,
+    argMaxMerge(str_properties.vals) AS str_pros_vals,
+    argMaxMerge(num_properties.keys) AS num_pros_keys,
+    argMaxMerge(num_properties.vals) AS num_pros_vals,
+    argMaxMerge(arr_properties.keys) AS arr_pros_keys,
+    argMaxMerge(arr_properties.vals) AS arr_pros_vals,
+    max(at_final) AS at
+FROM user_profile_final
+GROUP BY tenant_id, anonymous_id;
 
-
+select * from user_profile_final_v;
+select * from user_profile_final;
 --------------------------------------------------SEGMENT
 
 CREATE TABLE IF NOT EXISTS segments(
@@ -129,18 +146,18 @@ GROUP BY tenant_id, segment_id
 ;
 
 
+insert into segments values (1,'s1', ['a0','a8','a12','a36','a42','a105','a208','a402','a508','a612','886','a924'],now());
+insert into segments values (1,'s2', ['a2','a6','a18','a38','a40','a106','a205','a401','a503','a619','882','a929'],now());
+insert into segments values (1,'s3', ['a3','a8','a17','a35','a49','a105','a207','a401','a507','a614','885','a926'],now());
+insert into segments values (1,'s4', ['a4','a9','a17','a39','a48','a100','a207','a409','a506','a610','886','a925'],now());
+insert into segments values (1,'s5', ['a5','a8','a12','a36','a42','a103','a212','a416','a582','a674','845','a936'],now());
+insert into segments values (1,'s6', ['a6','a8','a12','a74','a42','a172','a206','a473','a508','a612','886','a924'],now());
 
-insert into segments values (1, 's0', ['a0','a2','a4'],now());
-insert into segments values (1,'s1', ['a0'],now());
-insert into segments values (2,'s2', ['a1', 'a3'], now());
-insert into segments values (2, 's3', ['a1', 'a3','a5'], now());
-
-
-insert into segments values (2, 's3', ['a3'], now());
 --test
 insert into segments values (1, 's4', ['a6', 'a7'], now());
 insert into segments values (1, 's5', ['a8', 'a9'], now());
 
+-- if 1.000.000 insert into segments get 5s ??
 SELECT tenant_id,
        segment_id
 FROM
@@ -389,6 +406,147 @@ GROUP BY
     segment_id
 ;
 
+--------------------------------------------LOCATION
+drop table segment_agg_gender_mv;
+CREATE MATERIALIZED VIEW IF NOT EXISTS segment_agg_locatoin_city_mv TO segment_agg AS
+SELECT
+    tenant_id,
+    segment_id,
+    now() AS time_stamp,
+    'location_city' AS metric_name,
+    groupArray(cate) AS `metrics_agg.keys`,
+    groupArray(count) AS `metrics_agg.vals`
+FROM
+(
+    SELECT
+        sf.tenant_id,
+        sf.segment_id,
+        pf.cate,
+        count() AS count
+    FROM
+    (
+        SELECT
+            tenant_id,
+            segment_id,
+            users
+        FROM
+        (
+            SELECT
+                tenant_id,
+                segment_id,
+                argMaxMerge(users) AS users
+            FROM segments_final
+            GROUP BY
+                tenant_id,
+                segment_id
+        )
+        ARRAY JOIN users
+    ) AS sf
+    INNER JOIN
+    (
+        SELECT
+            tenant_id,
+            anonymous_id,
+            str_vals[indexOf(str_keys, 'location_city')] AS cate
+        FROM
+        (
+            SELECT
+                tenant_id,
+                anonymous_id,
+                argMaxMerge(str_properties.keys) AS str_keys,
+                argMaxMerge(str_properties.vals) AS str_vals
+            FROM user_profile_final
+            GROUP BY
+                tenant_id,
+                anonymous_id
+        )
+    ) AS pf ON (sf.users = pf.anonymous_id) AND (sf.tenant_id = pf.tenant_id)
+    WHERE cate != ''
+    GROUP BY
+        tenant_id,
+        segment_id,
+        cate
+    ORDER BY
+        count DESC,
+        cate ASC
+)
+GROUP BY
+    tenant_id,
+    segment_id
+;
+
+
+--------------------------------------------SOURCE
+
+CREATE MATERIALIZED VIEW IF NOT EXISTS segment_agg_source_mv TO segment_agg AS
+SELECT
+    tenant_id,
+    segment_id,
+    now() AS time_stamp,
+    'source' AS metric_name,
+    groupArray(cate) AS `metrics_agg.keys`,
+    groupArray(count) AS `metrics_agg.vals`
+FROM
+(
+    SELECT
+        sf.tenant_id,
+        sf.segment_id,
+        pf.cate,
+        count() AS count
+    FROM
+    (
+        SELECT
+            tenant_id,
+            segment_id,
+            users
+        FROM
+        (
+            SELECT
+                tenant_id,
+                segment_id,
+                argMaxMerge(users) AS users
+            FROM segments_final
+            GROUP BY
+                tenant_id,
+                segment_id
+        )
+        ARRAY JOIN users
+    ) AS sf
+    INNER JOIN
+    (
+        SELECT
+            tenant_id,
+            anonymous_id,
+            str_vals[indexOf(str_keys, 'context_campaign_source')] AS cate
+        FROM
+        (
+            SELECT
+                tenant_id,
+                anonymous_id,
+                argMaxMerge(str_properties.keys) AS str_keys,
+                argMaxMerge(str_properties.vals) AS str_vals
+            FROM user_profile_final
+            GROUP BY
+                tenant_id,
+                anonymous_id
+        )
+    ) AS pf ON (sf.users = pf.anonymous_id) AND (sf.tenant_id = pf.tenant_id)
+    WHERE cate != ''
+    GROUP BY
+        tenant_id,
+        segment_id,
+        cate
+    ORDER BY
+        count DESC,
+        cate ASC
+)
+GROUP BY
+    tenant_id,
+    segment_id
+;
+
+
+
 
 ----------------------------------------------VIEW
 CREATE VIEW IF NOT EXISTS segment_agg_final_v
@@ -405,6 +563,42 @@ ORDER BY tenant_id, segment_id, metric_name
 ;
 
 SELECT * FROM segment_agg_final_v;
+
+INSERT INTO segment_agg values
+(1,'s1','2020-08-11 04:14:14','days_since_last_order',['max','avg','med','min'],[1684,1684,1684,1684]),
+(1,'s1','2020-08-11 04:14:14','gender',['female','male'],[7,4]),
+(1,'s1','2020-08-11 04:14:14','location_city',['VungTau','DaNang','HoChiMinh','CanTho','HaNoi'],[4,3,2,1,1]),
+(1,'s1','2020-08-11 04:14:14','revenue',['max','avg','med','min'],[278,178.18182,205,58]),
+(1,'s1','2020-08-11 04:14:14','source',['google','facebook','youtube'],[5,4,2]),
+(1,'s2','2020-08-11 04:14:17','days_since_last_order',['max','avg','med','min'],[1684,1684,1684,1684]),
+(1,'s2','2020-08-11 04:14:17','gender',['female','male'],[6,5]),
+(1,'s2','2020-08-11 04:14:17','location_city',['VungTau','CanTho','DaNang','HaNoi','HoChiMinh'],[4,2,2,2,1]),
+(1,'s2','2020-08-11 04:14:17','revenue',['max','avg','med','min'],[282,153,143,6]),
+(1,'s2','2020-08-11 04:14:17','source',['facebook','google','youtube'],[7,2,2]),
+(1,'s3','2020-08-11 04:14:20','days_since_last_order',['max','avg','med','min'],[1684,1684,1684,1684]),
+(1,'s3','2020-08-11 04:14:20','gender',['male','female'],[6,5]),
+(1,'s3','2020-08-11 04:14:20','location_city',['HoChiMinh','VungTau','HaNoi','DaNang'],[4,4,2,1]),
+(1,'s3','2020-08-11 04:14:20','revenue',['max','avg','med','min'],[283,184.27272,205,59]),
+(1,'s3','2020-08-11 04:14:20','source',['facebook','youtube','google'],[6,3,2]);
+
+
+insert into segment_agg values
+1,s1,2020-08-11 04:14:14,days_since_last_order,"['max','avg','med','min']","[1684,1684,1684,1684]"
+1,s1,2020-08-11 04:14:14,gender,"['female','male']","[7,4]"
+1,s1,2020-08-11 04:14:14,location_city,"['VungTau','DaNang','HoChiMinh','CanTho','HaNoi']","[4,3,2,1,1]"
+1,s1,2020-08-11 04:14:14,revenue,"['max','avg','med','min']","[278,178.18182,205,58]"
+
+
+
+
+truncate table segment_agg;
+select * from ;
+
+jdbc:clickhouse://20.10.23.165:9000/primedata
+
+
+
+
 
 
 
@@ -430,7 +624,7 @@ select * from segments;
 select * from segment_agg;
 select * from segments_final;
 
-
+select * from user_profile
 
 
 
@@ -448,7 +642,7 @@ drop table segment_agg_final;
 drop table segment_agg_final_mv;
 drop table segment_agg_gender_mv;
 drop table segment_agg_revenue_mv;
-drop table segment_agg_day_since_last_order_mv;
+drop table segment_agg_days_since_last_order_mv;
 
 -- truncate
 truncate table user_profile_final_mv;
@@ -462,39 +656,12 @@ truncate table segment_agg_final;
 truncate table segment_agg_final_mv;
 truncate table segment_agg_gender_mv;
 truncate table segment_agg_revenue_mv;
-truncate table segment_agg_day_since_last_order_mv;
+truncate table segment_agg_days_since_last_order_mv;
 
 
 
 
 
-
-
-
---------------------------------------------------------------TEST USER PROFILE
-select * from user_profile where tenant_id = 1 and anonymous_id = 'a0';
-
-select tenant_id,
-       argMaxMerge(user_id),
-       anonymous_id,
-       argMaxMerge(str_properties.keys),
-       argMaxMerge(str_properties.vals),
-       argMaxMerge(num_properties.keys),
-       argMaxMerge(num_properties.vals),
-       max(created_at_final)
-from user_profile_final
-group by tenant_id, anonymous_id
-limit 1;
---  1.314 sec
-
-select count() from user_profile;
-select count() from user_profile_final final;
-
-optimize table user_profile_final;
-
-
-select * from user_profile
-limit 10;
 
 
 
