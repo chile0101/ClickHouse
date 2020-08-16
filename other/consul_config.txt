@@ -1,0 +1,14 @@
+#migration_database:
+ # host: localhost
+ # port: 5433
+ # database: postgres
+ # user: postgres
+ # password: primedata
+ # dialect: "postgresql"
+#database:
+ # host: localhost
+ # port: 9000
+ # user: "default"
+ # password: ""
+ # driver: "native"
+ # database: "primedata"

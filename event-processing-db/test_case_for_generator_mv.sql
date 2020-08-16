@@ -659,15 +659,133 @@ truncate table segment_agg_revenue_mv;
 truncate table segment_agg_days_since_last_order_mv;
 
 
+-------------------------------------------------EVENTS----------------------------------------------
+show tables;
+select * from eventss;
+CREATE TABLE IF NOT EXISTS eventss
+(
+    `tenant_id` UInt16,
+    `user_id` String,
+    `anonymous_id` String,
+    `event_name` String,
+    `str_properties.keys` Array(String),
+    `str_properties.vals` Array(String),
+    `num_properties.keys` Array(String),
+    `num_properties.vals` Array(Float32),
+    `arr_properties.keys` Array(String),
+    `arr_properties.vals` Array(Array(String)),
+    `at` DateTime
+)
+ENGINE = MergeTree()
+PARTITION BY toYYYYMMDD(at)
+ORDER BY (tenant_id, anonymous_id, event_name, at)
+;
 
+insert into eventss values
+(1, 'u', 'a0', 'Payment Offer Applied', [],[],[],[],[],[], '2015-01-01 00:00:01'),
+(1, 'u1', 'a0', 'Order Completed', [],[],[],[],[],[], now());
 
+insert into eventss
+    with
+        ['Added to Card','App Launched','App Uninstalled','Category Viewed','Order Completed','Payment Offer Applied', 'Product Viewed', 'Searched'] as event_names,
+        ['fb','gg'] as sources
+    select
+        rand(1)%1+1 as tenant_id,
+        'u' as user_id,
+        concat('a', toString(number)) as anonymous_id,
+        event_names[rand(2)%length(event_names)+1] as event_name,
+        ['source'] as `str_properties.keys`,
+        [sources[rand(3)%length(sources)+1]] as `str_properties.vals`,
+        [] as `num_properties.keys`,
+        [] as `num_properties.vals`,
+        [''] as `arr_properties.keys`,
+        [[]] as `arr_properties.vals`,
+        toDateTime('2017-01-01 00:00:10')+number*60 as at
+    from system.numbers
+    limit 50
+;
 
+CREATE TABLE IF NOT EXISTS events_summary
+(
+    `tenant_id` UInt16,
+    `anonymous_id` String,
+    `event_name` String,
+    `count` UInt16,
+    `first_time` AggregateFunction(min, DateTime),
+    `last_time` AggregateFunction(max, DateTime)
+)
+ENGINE = SummingMergeTree()
+PARTITION BY tuple()
+ORDER BY (tenant_id, anonymous_id, event_name)
+;
 
+CREATE MATERIALIZED VIEW IF NOT EXISTS events_summary_mv TO events_summary AS
+SELECT
+    tenant_id,
+    anonymous_id,
+    event_name,
+    count(*) as count,
+    minState(at) as first_time,
+    maxState(at) as last_time
+FROM eventss
+GROUP BY tenant_id, anonymous_id, event_name
+;
 
+------------------------------------------ API summary events by anonymous_id and event_name
+-- time:
+create view if not exists events_summary_v as
+select
+    tenant_id,
+    anonymous_id,
+    event_name,
+    sum(count) as count,
+    minMerge(first_time) as first_time,
+    maxMerge(last_time) as last_time
+from events_summary
+group by tenant_id, anonymous_id, event_name
+order by tenant_id, anonymous_id, event_name
+;
+select * from events_summary_v where tenant_id = 1 and anonymous_id = 'a10'; -- 142ms
+select * from (
+                  select tenant_id,
+                         anonymous_id,
+                         event_name,
+                         sum(count)           as count,
+                         minMerge(first_time) as first_time,
+                         maxMerge(last_time)  as last_time
+                  from events_summary
+                  group by tenant_id, anonymous_id, event_name
+                  )
+where tenant_id = 1 and anonymous_id = 'a30'
+order by tenant_id, anonymous_id, event_name; -- 148
 
+-- Manual - time:
+select
+    tenant_id,
+    anonymous_id,
+    event_name,
+    count(),
+    min(at),
+    max(at)
+from eventss
+group by tenant_id, anonymous_id, event_name
+order by tenant_id, anonymous_id, event_name
+;
+------------------------------------------ API get events by anonymous_id, list of event name
 
+select
+    *
+from eventss
+where tenant_id = 1
+    and anonymous_id = 'a20'
+    and event_name in ['App Launched', 'App Uninstalled', 'Category Viewed', 'Searched']
+order by at desc
+limit 100
+;
 
+select * from eventss where anonymous_id = 'a0';
 
+truncate table eventss;
+truncate table events_summary;
 
-
-
+"App Launched", "App Uninstalled", "Category Viewed", "Searched"

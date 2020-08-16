@@ -6,5 +6,6 @@
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="python" />
     <orderEntry type="module" module-name="python" />
+    <orderEntry type="module" module-name="Docker" />
   </component>
 </module>
