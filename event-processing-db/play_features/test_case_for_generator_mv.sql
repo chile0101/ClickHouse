@@ -17,24 +17,8 @@ ORDER BY (tenant_id, anonymous_id, at);
 
 
 insert into user_profile values
-(1, 'u1', 'a0', [], ['gender', 'location'], ['f','DN'], ['total_value', 'last_order_at'], [0, toUnixTimestamp('2020-08-06 00:01:00')], [], [], now());
+( 'a0',1, [],[], ['gender', 'location'], ['f','DN'], ['total_value', 'last_order_at'], [12.12, toUnixTimestamp('2020-08-06 00:01:00')], [], [], now());
 
-insert into user_profile values
-(2, 'u1', 'a1', [], ['gender','location'], ['f','DH'], ['total_value','last_order_at'], [1,toUnixTimestamp('2020-08-05 00:05:00')], [], [], now());
-
-insert into user_profile values
-(1, 'u1', 'a2', [], ['gender','location'], ['o','HP'], ['total_value','last_order_at'], [2,toUnixTimestamp('2020-08-04 12:08:12')], [], [], now());
-
-insert into user_profile values
-(2, 'u1', 'a3', [], ['gender','location'], ['m','QN'], ['total_value','last_order_at'], [3,toUnixTimestamp('2020-08-03 11:02:00')], [], [], now());
-
-insert into user_profile values
-(1, 'u1', 'a4', [], ['gender'], ['m'], ['total_value','last_order_at'], [400, toUnixTimestamp('2020-08-02 09:45:08')], [], [], now());
-
-insert into user_profile values
-(2, 'u1', 'a5', [], ['gender'], ['m'], ['total_value','last_order_at'], [600.05,toUnixTimestamp('2020-08-01 08:30:00')], [], [], now());
-
--- test multi user
 
 insert into user_profile
     with [['male','female'] as genders, ['HoChiMinh','HaNoi','DaNang', 'VungTau','CanTho'] as locations, ['facebook','google','youtube'] as sources]
@@ -112,7 +96,7 @@ SELECT
 FROM user_profile_final
 GROUP BY tenant_id, anonymous_id;
 
-select * from user_profile_final_v;
+select * from user_profile_final_v where tenant_id = 1 and anonymous_id = 'a1';
 select * from user_profile_final;
 --------------------------------------------------SEGMENT
 
@@ -123,7 +107,7 @@ CREATE TABLE IF NOT EXISTS segments(
     at DateTime
 ) ENGINE = MergeTree()
 PARTITION BY toYYYYMM(at)
-ORDER BY (tenant_id, segment_id)
+ORDER BY (tenant_id, segment_id, at)
 ;
 
 CREATE TABLE IF NOT EXISTS segments_final(
@@ -661,8 +645,15 @@ truncate table segment_agg_days_since_last_order_mv;
 
 -------------------------------------------------EVENTS----------------------------------------------
 show tables;
-select * from eventss;
-CREATE TABLE IF NOT EXISTS eventss
+drop table  eventss;
+drop table events_raw;
+drop table events_summary;
+drop table events_summary_mv;
+drop table events_summary_v;
+
+
+select * from events;
+CREATE TABLE IF NOT EXISTS events
 (
     `tenant_id` UInt16,
     `user_id` String,
@@ -681,11 +672,9 @@ PARTITION BY toYYYYMMDD(at)
 ORDER BY (tenant_id, anonymous_id, event_name, at)
 ;
 
-insert into eventss values
-(1, 'u', 'a0', 'Payment Offer Applied', [],[],[],[],[],[], '2015-01-01 00:00:01'),
-(1, 'u1', 'a0', 'Order Completed', [],[],[],[],[],[], now());
 
-insert into eventss
+
+insert into events
     with
         ['Added to Card','App Launched','App Uninstalled','Category Viewed','Order Completed','Payment Offer Applied', 'Product Viewed', 'Searched'] as event_names,
         ['fb','gg'] as sources
@@ -700,9 +689,9 @@ insert into eventss
         [] as `num_properties.vals`,
         [''] as `arr_properties.keys`,
         [[]] as `arr_properties.vals`,
-        toDateTime('2017-01-01 00:00:10')+number*60 as at
+        toDateTime('2017-02-28 00:00:10')+number*60 as at
     from system.numbers
-    limit 50
+    limit 100
 ;
 
 CREATE TABLE IF NOT EXISTS events_summary
@@ -727,7 +716,7 @@ SELECT
     count(*) as count,
     minState(at) as first_time,
     maxState(at) as last_time
-FROM eventss
+FROM events
 GROUP BY tenant_id, anonymous_id, event_name
 ;
 
@@ -764,28 +753,176 @@ select
     tenant_id,
     anonymous_id,
     event_name,
-    count(),
+    count(event_name),
     min(at),
     max(at)
-from eventss
+from events
+where tenant_id = '1' and anonymous_id = 'a2'
 group by tenant_id, anonymous_id, event_name
-order by tenant_id, anonymous_id, event_name
+order by event_name
 ;
 ------------------------------------------ API get events by anonymous_id, list of event name
 
 select
     *
-from eventss
+from events
 where tenant_id = 1
-    and anonymous_id = 'a20'
-    and event_name in ['App Launched', 'App Uninstalled', 'Category Viewed', 'Searched']
+    and anonymous_id = 'a1'
+    and event_name in ['Added to Card']
 order by at desc
 limit 100
 ;
 
-select * from eventss where anonymous_id = 'a0';
+select * from events where anonymous_id = 'a0';
 
-truncate table eventss;
+truncate table events;
 truncate table events_summary;
 
 "App Launched", "App Uninstalled", "Category Viewed", "Searched"
+
+select toUnixTimestamp('2020-01-01 00:00:00');
+
+
+-----------------------------------------User-Segments
+CREATE TABLE IF NOT EXISTS users(
+    tenant_id UInt16,
+    anonymous_id String,
+    segments Array(String),
+    at DateTime
+) ENGINE = MergeTree()
+PARTITION BY toYYYYMM(at)
+ORDER BY (tenant_id, anonymous_id, at)
+;
+
+
+CREATE TABLE IF NOT EXISTS users_final(
+    tenant_id UInt16,
+    anonymous_id String,
+    segments AggregateFunction(argMax, Array(String), DateTime),
+    at_final SimpleAggregateFunction(max, DateTime)
+) ENGINE = AggregatingMergeTree()
+ORDER BY (tenant_id, anonymous_id)
+;
+
+CREATE MATERIALIZED VIEW IF NOT EXISTS users_final_mv TO users_final AS
+SELECT
+       tenant_id,
+       anonymous_id,
+       argMaxState(segments, at) AS segments,
+       max(at) as at_final
+FROM users
+GROUP BY tenant_id, anonymous_id
+;
+
+insert into users values (1,'a1', ['s0','s8','s12','s36','s42','s105','s208','s402','s508','s612','s886','s924'],now());
+insert into users values (1,'a2', ['s2','s6','s18','s38','s40','s106','s205','s401','s503','s619','s882','s929'],now());
+insert into users values (1,'a3', ['s3','s8','s17','s35','s49','s105','s207','s401','s507','s614','s885','s926'],now());
+insert into users values (1,'a4', ['s4','s9','s17','s39','s48','s100','s207','s409','s506','s610','s886','s925'],now());
+
+insert into users values (1,'a1', ['a5','a8','a12','a36','a42','a103','a212','a416','a582','a674','845','a936'],now());
+insert into users values (1,'a2', ['a6','a8','a12','a74','a42','a172','a206','a473','a508','a612','886','a924'],now());
+
+
+
+CREATE VIEW IF NOT EXISTS users_final_v AS
+SELECT tenant_id,
+        anonymous_id,
+        argMaxMerge(segments) AS segments,
+        max(at_final) as at
+FROM users_final
+GROUP BY tenant_id, anonymous_id
+;
+
+
+
+select * from users;
+select * from users_final_v;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+truncate table users;
+truncate table segments;
+truncate table users_final;
+truncate table segments_final;
+
+select * from users order by anonymous_id, at;
+select * from segments order by segment_id, at;
+
+select tenant_id, anonymous_id, argMaxMerge(segments) as segments, max(at_final) as at
+from users_final
+group by tenant_id, anonymous_id
+order by anonymous_id,at;
+
+select tenant_id, segment_id, argMaxMerge(users) as users, max(at_final) as at
+from segments_final
+group by tenant_id, segment_id
+order by segment_id, at;
+
+
+------ IN
+faust -A prile.workflows.segments_users_update.app send "segment_opt"  '{"tenant_id":1, "segment":"s1", "state": "in", "user":"a1", "at":"1598085000"}'
+faust -A prile.workflows.segments_users_update.app send "segment_opt"  '{"tenant_id":1, "segment":"s1", "state": "in", "user":"a2", "at":"1598085001"}'
+faust -A prile.workflows.segments_users_update.app send "segment_opt"  '{"tenant_id":1, "segment":"s1", "state": "in", "user":"a3", "at":"1598085002"}'
+
+faust -A prile.workflows.segments_users_update.app send "segment_opt"  '{"tenant_id":1, "segment":"s2", "state": "in", "user":"a1", "at":"1598085003"}'
+faust -A prile.workflows.segments_users_update.app send "segment_opt"  '{"tenant_id":1, "segment":"s2", "state": "in", "user":"a2", "at":"1598085004"}'
+
+faust -A prile.workflows.segments_users_update.app send "segment_opt"  '{"tenant_id":1, "segment":"s3", "state": "in", "user":"a1", "at":"1598085005"}'
+
+------- OUT
+faust -A prile.workflows.segments_users_update.app send "segment_opt"  '{"tenant_id":1, "segment":"s1", "state": "out", "user":"user2", "at":"1598083560"}'
+faust -A prile.workflows.segments_users_update.app send "segment_opt"  '{"tenant_id":1, "segment":"s1", "state": "out", "user":"a2", "at":"1598083480"}'
+
+
+CREATE VIEW IF NOT EXISTS user_segments_v AS
+SELECT
+    u.tenant_id,
+    u.anonymous_id,
+    s.segment_id as segment,
+    s.segment_size AS segment_size
+FROM
+(
+    SELECT *
+    FROM
+    (
+        SELECT
+            tenant_id,
+            anonymous_id,
+            argMaxMerge(segments) AS segments,
+            max(at_final) AS at
+        FROM users_final
+        GROUP BY
+            tenant_id,
+            anonymous_id
+    )
+    ARRAY JOIN segments
+) AS u
+INNER JOIN
+(
+    SELECT
+        tenant_id,
+        segment_id,
+        length(argMaxMerge(users)) AS segment_size
+    FROM segments_final
+    GROUP BY
+        tenant_id,
+        segment_id
+) AS s ON (u.tenant_id = s.tenant_id) AND (u.segments = s.segment_id)
+;
+
+
+select * from user_segments_v where tenant_id = 1 and anonymous_id = 'a1';
