@@ -10,6 +10,7 @@ CREATE TABLE segment_agg
 ENGINE = MergeTree()
 PARTITION BY toYYYYMM(time_stamp)
 ORDER BY (tenant_id, segment_id, metric_name)
+;
 
 CREATE TABLE segment_agg_final
 (

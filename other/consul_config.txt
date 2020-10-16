@@ -1,14 +1,23 @@
-#migration_database:
- # host: localhost
- # port: 5433
- # database: postgres
- # user: postgres
- # password: primedata
- # dialect: "postgresql"
-#database:
- # host: localhost
- # port: 9000
- # user: "default"
- # password: ""
- # driver: "native"
- # database: "primedata"
+
+
+
+
+
+migration_database:
+  host: postgres-app.cddn9gddohpg.ap-southeast-1.rds.amazonaws.com
+  port: 5432
+  database: trackingsource
+  user: postgres
+  password: pd10101!
+  dialect: "postgresql"
+database:
+  host: 20.10.23.165
+  port: 9000
+  user: "default"
+  password: "primedata"
+  driver: "native"
+  database: "primedata"
+app:
+  version: "0.0.1"
+  debug: "true"
+  name: "prile"

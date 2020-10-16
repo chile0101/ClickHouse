@@ -152,3 +152,32 @@ insert into par values
 
 insert into par values
 ('p6',14, '2021-01-01 00:00:00')
+
+
+
+--------------------------------------Array Filter
+create table users(
+    id UInt16,
+    identity Nested(
+        keys String,
+        vals String
+    )
+)ENGINE = MergeTree()
+ORDER BY id
+;
+
+insert into users values
+(1, ['name','email','email'],['chi','chi@gmail.com','le@gmail.com']);
+
+insert into users values
+(2, ['name','email','email'],['brian','brian@gmail.com','hung@gmail.com']);
+
+select
+       id,
+       arrayFilter(
+            (x, y) -> y LIKE 'email' and x != '' ,
+            identity.vals,
+            identity.keys
+           )
+from users;
+

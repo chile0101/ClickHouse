@@ -1,4 +1,4 @@
--- TODO: edit name users-> user_segments
+
 CREATE TABLE user_segments
 (
     `tenant_id` UInt16,
@@ -9,7 +9,7 @@ CREATE TABLE user_segments
 ENGINE = MergeTree()
 PARTITION BY toYYYYMM(at)
 ORDER BY (tenant_id, anonymous_id, at)
-
+;
 
 CREATE TABLE user_segments_final
 (
@@ -22,7 +22,7 @@ ENGINE = AggregatingMergeTree()
 ORDER BY (tenant_id, anonymous_id)
 ;
 
-CREATE MATERIALIZED VIEW IF NOT EXISTS user_segments_final_mv TO user_segments_final AS
+CREATE MATERIALIZED VIEW user_segments_final_mv TO user_segments_final AS
 SELECT
        tenant_id,
        anonymous_id,
@@ -36,8 +36,10 @@ CREATE VIEW IF NOT EXISTS user_segments_final_v AS
 SELECT tenant_id,
         anonymous_id,
         argMaxMerge(segments) AS segments,
-        max(at_final) as at
+        max(at_final) as at_final
 FROM user_segments_final
 GROUP BY tenant_id, anonymous_id
 ;
+
+select * from user_segments_final;
 

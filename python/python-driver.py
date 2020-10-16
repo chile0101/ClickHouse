@@ -3,7 +3,7 @@ from clickhouse_driver import Client
 client = Client(
                 host = 'localhost', 
                 port = 9000, 
-                database = 'db_test',
+                database = 'primedata_test',
                 )
 
 client.execute('show tables')

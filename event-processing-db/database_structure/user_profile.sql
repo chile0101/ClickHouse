@@ -1,10 +1,11 @@
-CREATE TABLE IF NOT EXISTS user_profile
+drop table user_profile;
+CREATE TABLE user_profile
 (
     `anonymous_id` String,
     `tenant_id` UInt16,
     `identity`       Nested(    keys String,     vals String),
     `str_properties` Nested(    keys String,     vals String),
-    `num_properties` Nested(    keys String,     vals Float32),
+    `num_properties` Nested(    keys String,     vals Float64),
     `arr_properties` Nested(    keys String,     vals Array(String)),
     `at` DateTime
 )
@@ -13,7 +14,8 @@ PARTITION BY toYYYYMM(at)
 ORDER BY (tenant_id, anonymous_id, at)
 ;
 
-CREATE TABLE IF NOT EXISTS user_profile_final
+drop table user_profile_final;
+CREATE TABLE user_profile_final
 (
     `anonymous_id` String,
     `tenant_id` UInt16,
@@ -22,7 +24,7 @@ CREATE TABLE IF NOT EXISTS user_profile_final
     `str_properties.keys` AggregateFunction(argMax, Array(String), DateTime),
     `str_properties.vals` AggregateFunction(argMax, Array(String), DateTime),
     `num_properties.keys` AggregateFunction(argMax, Array(String), DateTime),
-    `num_properties.vals` AggregateFunction(argMax, Array(Float32), DateTime),
+    `num_properties.vals` AggregateFunction(argMax, Array(Float64), DateTime),
     `arr_properties.keys` AggregateFunction(argMax, Array(String), DateTime),
     `arr_properties.vals` AggregateFunction(argMax, Array(Array(String)), DateTime),
     `at_final` SimpleAggregateFunction(max, DateTime)
@@ -31,6 +33,7 @@ ENGINE = AggregatingMergeTree()
 ORDER BY (tenant_id, anonymous_id)
 ;
 
+drop table user_profile_final_mv;
 CREATE MATERIALIZED VIEW IF NOT EXISTS user_profile_final_mv TO user_profile_final AS
 SELECT
     anonymous_id,
@@ -51,10 +54,24 @@ GROUP BY
 ;
 
 
-CREATE VIEW IF NOT EXISTS user_profile_final_v AS
+drop table user_profile_final_v;
+CREATE VIEW user_profile_final_v
+(
+    `anonymous_id` String,
+    `tenant_id` UInt16,
+    `identity_keys` Array(String),
+    `identity_vals` Array(String),
+    `str_pros_keys` Array(String),
+    `str_pros_vals` Array(String),
+    `num_pros_keys` Array(String),
+    `num_pros_vals` Array(Float64),
+    `arr_pros_keys` Array(String),
+    `arr_pros_vals` Array(Array(String)),
+    `at` SimpleAggregateFunction(max, DateTime)
+) AS
 SELECT
-     anonymous_id,
-     tenant_id ,
+    anonymous_id,
+    tenant_id,
     argMaxMerge(identity.keys) AS identity_keys,
     argMaxMerge(identity.vals) AS identity_vals,
     argMaxMerge(str_properties.keys) AS str_pros_keys,
@@ -65,4 +82,6 @@ SELECT
     argMaxMerge(arr_properties.vals) AS arr_pros_vals,
     max(at_final) AS at
 FROM user_profile_final
-GROUP BY tenant_id, anonymous_id;
+GROUP BY
+    tenant_id,
+    anonymous_id

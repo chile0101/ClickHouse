@@ -10,4 +10,3 @@ START
     docker container start --detach-keys=first-start clickhouse-server 
 
 
-

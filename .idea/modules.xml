@@ -3,7 +3,9 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/../Docker/.idea/Docker.iml" filepath="$PROJECT_DIR$/../Docker/.idea/Docker.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../REPORTS/.idea/REPORTS.iml" filepath="$PROJECT_DIR$/../REPORTS/.idea/REPORTS.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/clickhouse.iml" filepath="$PROJECT_DIR$/.idea/clickhouse.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../../PrimeData/puppeteer-tools/.idea/puppeteer-tools.iml" filepath="$PROJECT_DIR$/../../PrimeData/puppeteer-tools/.idea/puppeteer-tools.iml" />
       <module fileurl="file://$PROJECT_DIR$/../python/.idea/python.iml" filepath="$PROJECT_DIR$/../python/.idea/python.iml" />
     </modules>
   </component>
