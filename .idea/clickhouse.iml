@@ -9,6 +9,6 @@
     <orderEntry type="module" module-name="Docker" />
     <orderEntry type="module" module-name="python" />
     <orderEntry type="module" module-name="REPORTS" />
-    <orderEntry type="module" module-name="puppeteer-tools" />
+    <orderEntry type="module" module-name="python" />
   </component>
 </module>

@@ -231,6 +231,9 @@ faust -A prile.workflows.segments_users_update.app send "segment_opt"  '{"tenant
 faust -A prile.workflows.segments_users_update.app send "segment_opt"  '{"tenant_id":1, "segment":"s5", "state": "out", "user":"a1", "at":"1599320018"}'
 
 
+faust -A prile.workflows.segments_users_update.app send "segment-user-update"  '{"segment":"1jlSJHmg8wkje9jlTxgj8wOSxMw","state":"segmentOptIn","user":"DC6mKPpD8ovPTbS0M6UQBsQ601I","at":1604383796111,"tenant_id":1}'
+
+
 
 
 select * from user_segments;
@@ -287,5 +290,16 @@ faust -A prile.workflows.segments_users_update.app send "segment_opt"  '{"tenant
 
 
 
-select * from user_segments;
+select * from user_segments_final_v order by at ;
+select * from segment_users_final_v order by at;
 select * from segment_users;
+
+select count() from  user_segments;
+select count() from segment_users;
+
+
+
+select * from segment_users where segment_id = '1jlSJHmg8wkje9jlTxgj8wOSxMw' order by at desc ;
+select * from user_segments where anonymous_id = 'DC6mKPpD8ovPTbS0M6UQBsQ601I' order by at desc ;
+
+select * from user_segments;

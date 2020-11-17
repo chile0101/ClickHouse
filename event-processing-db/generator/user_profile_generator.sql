@@ -4,7 +4,8 @@ insert into user_profile
     ['Nguyen Van', 'Hoang', 'Le Huu'] as last_names,
     ['Male','Female'] as genders,
     ['Hochiminh','Hanoi','Danang', 'Vungtau','Cantho'] as locations,
-    [['facebook', 'google'],[ 'onesignal'], ['google','mailchimp'],['facebook']] as channels
+    [['facebook', 'google'],[ 'onesignal'], ['google','mail' ||
+                                                      'chimp'],['facebook']] as channels
     select
            concat('a', toString(number)) as anonymous_id,
            rand(1)%1+1 as tenant_id,

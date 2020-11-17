@@ -1,3 +1,4 @@
+
 truncate table segment_users;
 truncate table segment_users_final;
 

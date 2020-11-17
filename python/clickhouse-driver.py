@@ -1,10 +1,10 @@
-from clickhouse_driver import Client
-
-client = Client(
-                host = 'localhost',
-                port = 9000,
-                database = 'test',
-                )
+# from clickhouse_driver import Client
+#
+# client = Client(
+#                 host = 'localhost',
+#                 port = 9000,
+#                 database_schema = 'test',
+#                 )
 
 
 # result = client.execute("""select arrayZip(arr_pros_key, arr_pros_val)
@@ -54,8 +54,27 @@ client = Client(
 
 
 
+#
+# #---------------------------TEST TIME
+# result = client.execute("""select now()""")
+#
+# print(result)
 
-#---------------------------TEST TIME
-result = client.execute("""select now()""")
 
-print(result)
+import re
+
+
+reg = '/internal/reporting'
+
+url1 = "/internal/reporting/a"
+url2 = 'abc/internal/abc'
+
+
+if re.match(reg, url1):
+    print("chinh xac")
+if re.match(reg, url2):
+    print("chinh xac 2")
+
+
+
+

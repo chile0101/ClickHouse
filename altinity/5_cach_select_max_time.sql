@@ -7,7 +7,7 @@ CREATE TABLE downloads (
     bytes Float32
 ) ENGINE=MergeTree
 PARTITION BY toYYYYMM(when)
-ORDER BY (userid, when)
+ORDER BY (userid, when);
 
 insert into downloads values
 (now(), 1, 12),

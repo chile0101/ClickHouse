@@ -236,3 +236,46 @@ WHERE tenant_id = 1 and anonymous_id = 'a1';
 SELECT num_pros_vals[indexOf(num_pros_keys, 'total_order')]
 FROM user_profile_final_v
 WHERE tenant_id = 1 and anonymous_id = 'a1';
+
+
+
+SELECT avgOrDefault(delta) AS avg_between_session
+FROM (
+       SELECT
+              runningDifference(cityHash64(session_id))  AS  sess_diff,
+              runningDifference(toUnixTimestamp(at)) AS delta
+       FROM
+        (
+             SELECT
+                    session_id,
+                    at
+             FROM events
+             WHERE tenant_id =1 AND anonymous_id = 'DBzEQzzUKZVe19AhAyKrHG0SpOe'
+             ORDER BY at
+        )
+)
+WHERE sess_diff != 0;
+
+select * from events;
+
+
+SELECT
+        avgOrDefault(arraySum(delta_arr)) AS avg_session_duration
+FROM
+(
+      SELECT session_id,
+             arrayDifference(time_arr) AS delta_arr
+      FROM
+      (
+            SELECT session_id,
+                   groupArray(toUnixTimestamp(at)) AS time_arr
+            FROM
+            (
+                SELECT session_id, at
+                FROM events
+                WHERE tenant_id = 1 AND anonymous_id = 'DBzEQzzUKZVe19AhAyKrHG0SpOe'
+                ORDER BY at
+            )
+            GROUP BY session_id
+      )
+)

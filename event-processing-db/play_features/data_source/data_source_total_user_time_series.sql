@@ -300,3 +300,130 @@ LIMIT 1000;
 
 select * from events limit 10;
 select * from event_total_user_by_source_ts limit 10;
+
+
+
+
+
+---------------REFACTOR
+
+SELECT
+       toUnixTimestamp(t1.time_stamp) AS time_stamp,
+       t1.time_stamp as date_time,
+       t2.value as value
+FROM
+(
+    WITH
+        15 AS delta,
+        {start_time} AS start_unix,
+        {end_time} AS end_unix,
+        FROM_UNIXTIME(start_unix) AS start,
+        FROM_UNIXTIME(end_unix) AS end,
+        ceil((end_unix - start_unix)/(60*delta)) AS n
+    SELECT addMinutes(toStartOfFifteenMinutes(start), number * delta) AS time_stamp
+    FROM system.numbers
+    LIMIT n
+) AS t1
+LEFT JOIN
+(
+    WITH
+        FROM_UNIXTIME({start_time}) AS start,
+        FROM_UNIXTIME({end_time}) AS end
+    SELECT  time_stamp,
+            uniqMerge(value) AS value
+    FROM event_total_user_by_source_scope_ts
+    WHERE (tenant_id = :tenant_id)
+            AND (source_scope = :source_scope)
+            AND (time_stamp >= start)
+            AND (time_stamp <= end)
+    GROUP BY tenant_id,
+             source_scope,
+             time_stamp
+) AS t2
+ON t1.time_stamp = t2.time_stamp
+ORDER BY t1.time_stamp
+;
+
+
+
+---------EDIT
+select * from events_total_distinct_users_by_source_scope_ts;
+
+
+
+SELECT  (time_stamp) as time_stamp,
+        uniqMerge(value) AS value
+FROM events_total_distinct_users_by_source_scope_ts
+WHERE (tenant_id = 0)
+        AND (source_scope = 'JS-1iRNWBw2hNQTRQibnJeb8NTep7u')
+        AND (time_stamp >= '2020-10-15 00:00:00')
+        AND (time_stamp <= '2020-10-15 10:00:00')
+GROUP BY tenant_id,
+         source_scope,
+         time_stamp
+ORDER BY time_stamp WITH FILL FROM toDateTime('2020-10-15 00:00:00') TO toDateTime('2020-10-15 10:00:00') STEP 5*60
+;
+
+select toUnixTimestamp('2020-10-20 00:00:00') as start,
+       toUnixTimestamp('2020-10-30 00:00:00') as end;
+
+
+
+select * from events limit 10;
+select * from events where scope = 'JS-1iRNWBw2hNQTRQibnJeb8NTep7u' limit 10;
+
+
+select toUnixTimestamp('2020-10-21 00:00:00') as start,
+       toUnixTimestamp('2020-10-23 00:00:00') as end;
+
+------------------Fix bug data source TS
+SELECT  toStartOfFifteenMinutes(time_stamp) as time_stamp,
+        uniqMerge(value) AS value
+FROM events_total_distinct_users_by_source_scope_ts
+WHERE (tenant_id = 1)
+        AND (source_scope = 'JS-1iRNWBw2hNQTRQibnJeb8NTep7u')
+        AND (time_stamp >= '2020-10-22 10:00:00')
+        AND (time_stamp <= '2020-10-22 16:00:00')
+GROUP BY tenant_id,
+         source_scope,
+         time_stamp
+ORDER BY time_stamp WITH FILL FROM toDateTime('2020-10-22 10:00:00') TO toDateTime('2020-10-22 16:00:00') STEP 15*60;
+
+
+
+
+select * from events_total_distinct_users_by_source_scope_ts where source_scope = 'JS-1iRNWBw2hNQTRQibnJeb8NTep7u';
+
+select count(distinct anonymous_id)
+from events
+where tenant_id =1 and  scope = 'JS-1iRNWBw2hNQTRQibnJeb8NTep7u';
+
+
+
+show create table events_total_distinct_users_by_source_scope_ts;
+CREATE TABLE eventify.events_total_distinct_users_by_source_scope_ts
+(
+    `tenant_id` UInt16,
+    `source_scope` String,
+    `time_stamp` DateTime,
+    `value` AggregateFunction(uniq, String)
+)
+ENGINE = MergeTree()
+PARTITION BY toYYYYMM(time_stamp)
+ORDER BY (tenant_id, source_scope, time_stamp);
+
+show create table events_total_distinct_users_by_source_scope_ts_mv;
+CREATE MATERIALIZED VIEW eventify.events_total_distinct_users_by_source_scope_ts_mv TO eventify.events_total_distinct_users_by_source_scope_ts
+AS
+SELECT
+    tenant_id,
+    scope AS source_scope,
+    toStartOfFiveMinute(at) AS time_stamp,
+    uniqState(anonymous_id) AS value
+FROM eventify.events
+GROUP BY
+    tenant_id,
+    source_scope,
+    time_stamp
+
+

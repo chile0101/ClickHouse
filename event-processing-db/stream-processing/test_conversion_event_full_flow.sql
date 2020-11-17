@@ -153,3 +153,34 @@ faust -A prile.workflows.conversion_broadcast.app send "conversion-event"  '{"id
 
 
 faust -A prile.workflows.conversion_broadcast.app send "conversion-event"  '{"id":"event-123","tenant_id":1, "anonymous_id": "a1", "event_name": "Buy Xiaomi 123", "identity_keys":[], "identity_vals" : [], "str_properties_keys":["currency"],"str_properties_vals":["VND"],"num_properties_keys":["total_value"],"num_properties_vals":[64000],"arr_properties_keys":[],"arr_properties_vals":[],"at":1601550212}'
+
+
+
+select count() from user_profile;
+
+select * from user_profile
+where anonymous_id = 'DC2jcXQnSJhAr2rOA7c6v4ykT8E'
+order by at desc ;
+
+
+
+faust -A prile.workflows.conversion_broadcast.app send "conversion-events" '{"eventType":"checkout_completed","itemId":"DC3T77N4k3qLhQ03V10OExVEKFQ","itemType":"event","persistent":true,"profileId":"DC2jcXQnSJhAr2rOA7c6v4ykT8E","properties":{"cart_id":"1","cart_subtotal_value":0,"country":"VI","coupon_added":false,"currency":"vnd","discount_value":0,"gender":"male","order_id":"1","payment_method":"COD","shipping_address":"vi","shipping_cost":0,"shipping_country":"VI","shipping_state":"vi","shipping_zipcode":"70000","total_value":20},"scope":"JS-1iRNWBw2hNQTRQibnJeb8NTep7u","sendAt":1604329967888,"sessionId":"ae4e95bb-a4ed-0767-32cf-2a2c58aa91b4","source":{"itemId":"https://weburnit.github.io/","itemType":"page","properties":{"attributes":[],"consentTypes":[],"interests":{},"pageInfo":{"destinationURL":"https://weburnit.github.io/","pageName":"Pullman Hotel Resorts - Saloniz Solution","pagePath":"/","referringURL":""}},"scope":"JS-1iRNWBw2hNQTRQibnJeb8NTep7u","version":null},"target":{"itemId":"/","itemType":"page","properties":{},"scope":"JS-1iRNWBw2hNQTRQibnJeb8NTep7u","version":null},"tenant_id":1,"timeStamp":1604329967869,"version":null}'
+
+
+
+select * from user_profile_final_v where anonymous_id = 'DC5oh613LB8E5OXVs73H8OO9A7k';
+select * from user_profile where anonymous_id = 'DC5oh613LB8E5OXVs73H8OO9A7k' order by at desc ;
+alter table user_profile delete where anonymous_id = 'DC539BRX9CYcvtkgMnGINv6LcaB';
+alter table user_profile_final delete where anonymous_id = 'DC539BRX9CYcvtkgMnGINv6LcaB';
+
+
+
+select * from user_profile where anonymous_id = 'DC539BRX9CYcvtkgMnGINv6LcaB' order by at desc ;
+
+select * from user_profile_final_v where anonymous_id = 'DC539BRX9CYcvtkgMnGINv6LcaB' ;
+select * from user_profile;
+
+
+select fromUnixTimestamp64Milli(1604331595254);
+select now64() as time, toTypeName(time) as type;
+select toUnixTimestamp64Milli(toDateTime64('2020-11-03 08:28:12.158', 3, 'UTC')); --1604392092158

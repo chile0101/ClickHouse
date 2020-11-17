@@ -13,5 +13,11 @@
       <jdbc-driver>ru.yandex.clickhouse.ClickHouseDriver</jdbc-driver>
       <jdbc-url>jdbc:clickhouse://10.110.1.5:8123/</jdbc-url>
     </data-source>
+    <data-source source="LOCAL" name="new_server" uuid="e291002d-9405-4da2-8ff6-08bfdf6a78c0">
+      <driver-ref>clickhouse</driver-ref>
+      <synchronize>true</synchronize>
+      <jdbc-driver>ru.yandex.clickhouse.ClickHouseDriver</jdbc-driver>
+      <jdbc-url>jdbc:clickhouse://103.57.210.44:8123</jdbc-url>
+    </data-source>
   </component>
 </project>

@@ -542,3 +542,88 @@ LEFT JOIN
         source_id ASC,
         time_stamp ASC
 ) AS t2 ON t1.data_point = t2.time_stamp
+;
+
+
+select * from event_total_user_by_source_scope_ts;
+
+show create table event_total_user_by_source_scope_ts;
+show create table event_total_user_by_source_scope_ts_mv;
+
+
+
+--------- RENAME MV's name.
+
+-- Rename table.
+CREATE TABLE events_total_distinct_users_by_source_scope_ts
+(
+    `tenant_id` UInt16,
+    `source_scope` String,
+    `time_stamp` DateTime,
+    `value` AggregateFunction(uniq, String)
+)
+ENGINE = MergeTree()
+PARTITION BY toYYYYMM(time_stamp)
+ORDER BY (tenant_id, source_scope, time_stamp)
+;
+
+-- Drop MV.
+drop table event_total_user_by_source_scope_ts_mv;
+
+-- Create new MV
+drop table events_total_distinct_users_by_source_scope_ts_mv;
+CREATE MATERIALIZED VIEW events_total_distinct_users_by_source_scope_ts_mv TO events_total_distinct_users_by_source_scope_ts
+AS
+SELECT
+    tenant_id,
+    scope as source_scope,
+    toStartOfFiveMinute(at) AS time_stamp,
+    uniqState(anonymous_id) AS value
+FROM events
+GROUP BY
+    tenant_id,
+    source_scope,
+    time_stamp
+;
+
+
+-----------TEST
+select * from events_total_distinct_users_by_source_scope_ts;
+
+SELECT uniqMerge(value) AS total_user
+FROM events_total_distinct_users_by_source_scope_ts
+WHERE (tenant_id = 0) AND (source_scope = 'JS-1iRNWBw2hNQTRQibnJeb8NTep7u')
+GROUP BY
+    tenant_id,
+    source_scope;
+
+truncate table events_total_distinct_users_by_source_scope_ts;
+select count() from events_total_distinct_users_by_source_scope_ts;
+
+
+truncate table events_total_distinct_users_by_source_scope_ts;
+INSERT INTO events_total_distinct_users_by_source_scope_ts
+SELECT
+    tenant_id,
+    scope as source_scope,
+    toStartOfFiveMinute(at) AS time_stamp,
+    uniqState(anonymous_id) AS value
+FROM events
+GROUP BY
+    tenant_id,
+    source_scope,
+    time_stamp;
+
+select count(*) from events_total_distinct_users_by_source_scope_ts;
+
+
+select count(source_scope) from events_total_distinct_users_by_source_scope_ts;
+select * from events_total_distinct_users_by_source_scope_ts where source_scope = 'JS-1iRNWBw2hNQTRQibnJeb8NTep7u';
+
+select count(distinct anonymous_id)
+from events
+where scope = 'JS-1iRNWBw2hNQTRQibnJeb8NTep7u';
+
+
+
+show tables ;

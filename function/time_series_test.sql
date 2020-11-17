@@ -54,6 +54,18 @@ GROUP BY timeslot
 ;
 
 
+WITH
+    `str_properties.vals`[indexOf(`str_properties.keys`, 'utm_campaign')] AS campaign_id
+SELECT
+    `num_properties.vals`[indexOf(`num_properties.keys`, 'total_value')] AS total_value,
+    at
+FROM events_campaign
+WHERE tenant_id = 1
+  AND campaign_id = 'campaign2'
+  AND at >= FROM_UNIXTIME(1577836800)
+  AND at <=FROM_UNIXTIME(1578009655)
+ORDER BY at
+;
 -- timeSeriesGroupSum
 CREATE TABLE time_series(
     uid       UInt64,
