@@ -4,10 +4,9 @@
     <content url="file://$MODULE_DIR$">
       <excludeFolder url="file://$MODULE_DIR$/.python" />
     </content>
-    <orderEntry type="jdk" jdkName="Python 3.6" jdkType="Python SDK" />
+    <orderEntry type="jdk" jdkName="Python 3.7 (clickhouse)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="Docker" />
-    <orderEntry type="module" module-name="python" />
     <orderEntry type="module" module-name="REPORTS" />
     <orderEntry type="module" module-name="python" />
   </component>

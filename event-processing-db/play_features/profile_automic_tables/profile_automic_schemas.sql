@@ -370,7 +370,7 @@ select tenant_id,
        anonymous_id,
        str_pros,
        num_pros,
-       arrayReduce('max', [ps.at, pn.at]) as at
+       arrayReduce('max', [ps.at, pn.at]) as at -- ps.at > pn.at ? ps.at : pn.at
 from
 (
     select tenant_id,
@@ -487,19 +487,57 @@ select toDate(at) from profile_str; --2020-11-16
 
 
 
--------------------------------------------min max avg
+-------------------------------------------get campaign filter
+
+select * from events_campaign;
 
 
 
+ select
+    arrayDistinct(groupArray(utm_content)) as utm_content,
+    arrayDistinct(groupArray(utm_source)) as utm_source,
+    arrayFilter(x-> x != '',arrayDistinct(groupArray(up.`str_pros_vals`[indexOf(up.`str_pros_keys`,'gender')]))) as gender,
+    arrayFilter(x-> x != '',arrayDistinct(groupArray(up.`str_pros_vals`[indexOf(up.`str_pros_keys`,'city')]))) as city,
+    arrayFilter(x-> x != '',arrayDistinct(groupArray(up.`str_pros_vals`[indexOf(up.`str_pros_keys`,'device_platform')]))) as device_platform
+
+ from ( select * from  events_campaign  where tenant_id = 1 and utm_campaign = 'ARPU Increase Experiment' ) ec
+    join
+    user_profile_final_v up  on ec.tenant_id = up.tenant_id and ec.anonymous_id = up.anonymous_id
+group by utm_campaign;
+;
 
 
 
-
-
-
-
-
-
-
-
+select arrayDistinct(groupArray(utm_content)) as utm_content,
+        arrayDistinct(groupArray(utm_source)) as utm_source,
+       arrayDistinct(groupArray(gender)) as gender,
+       arrayDistinct(groupArray(city)) as city,
+       arrayDistinct(groupArray(device_platform)) as device_platform
+from ( select tenant_id,
+              anonymous_id,
+              utm_content,
+              utm_content,
+              utm_source
+        from events_campaign
+        where tenant_id = 1 and utm_campaign = 'ARPU Increase Experiment' ) as ec
+join
+(
+    select
+           tenant_id,
+           anonymous_id,
+           arr_val[indexOf(arrr_key,'gender')] as gender,
+           arr_val[indexOf(arrr_key, 'city')] as city,
+           arr_val[indexOf(arrr_key, 'device_platform')] as device_platform
+    from (
+        select tenant_id,
+               anonymous_id,
+               groupArray(str_key) as arrr_key,
+               groupArray(str_val) as arr_val
+        from profile_str_final_v
+        where tenant_id = 1 and str_key in ('gender','city','device_platform')
+        group by tenant_id, anonymous_id
+    )
+) as  up
+on ec.tenant_id = up.tenant_id and ec.anonymous_id = up.anonymous_id
+;
 

@@ -181,3 +181,8 @@ select
            )
 from users;
 
+;
+
+
+with [1,2,3, 0, 0, 1] as arr
+select arrayCumSum(arr);
