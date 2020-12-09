@@ -57,3 +57,7 @@ SELECT
     toDateTime('2020-10-08 00:00:00') + number * rand(12)%60 AS at
 FROM numbers(3)
 ;
+
+
+with ['1','2','3'] as arr
+select arr[5]

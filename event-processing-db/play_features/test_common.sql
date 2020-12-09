@@ -1,27 +1,45 @@
-select * from events_campaign;
+SELECT tenant_id,
+       anonymous_id,
+       groupArray((str_key, str_val)) AS pros,
+       max(toUnixTimestamp64Milli(at)) AS at
+FROM profile_str_final_v
+WHERE tenant_id = 0
+  AND anonymous_id = 'DD9Cm3xVlLFVa9CVawn0AGsQt4v'
+  AND str_key IN ['dob','firstVisit','first_name','gender','id']
+GROUP BY tenant_id, anonymous_id;
 
 
 
-select count() from profile_num;
-
-select count() from profile_str;
 
 
-select * from profile_num order by at desc limit 100;
-
-select count() from profile_num;
-
-
-select * from events_campaign order by at desc ;
-
-
-select * from events_campaign limit 10;
-
-
-select FROM_UNIXTIME(1605859791);
-select FROM_UNIXTIME();
+select tenant_id,
+       anonymous_id,
+       str_key,
+       str_val,
+       at
+from profile_str_final_v
+WHERE tenant_id = 0
+  AND anonymous_id = 'DD9Cm3xVlLFVa9CVawn0AGsQt4v'
+  AND str_key IN ['dob','firstVisit','first_name','gender','id']
+;
+select * from profile_str_final_v where tenant_id = 0 and anonymous_id = 'DD9Cm3xVlLFVa9CVawn0AGsQt4v';
 
 
+insert into profile_str values
+('DD9Cm3xVlLFVa9CVawn0AGsQt4v',0,'dob','04/03/1988','2020-11-16 08:14:60.000');
 
-select * from segment_user where segment_id = '1kfsqLxYc9PfwmKGckz3tOyHJki';
-select * from segment_user_final_v where segment_id = '1kfsqLxYc9PfwmKGckz3tOyHJki';
+
+
+SELECT tenant_id,
+       anonymous_id,
+       groupArray((num_key, num_val)) AS pros,
+       max(toUnixTimestamp64Milli(at)) AS at
+FROM profile_num_final_v
+WHERE tenant_id = 1
+  AND anonymous_id = 'DD9Cm3xVlLFVa9CVawn0AGsQt4v'
+  AND num_key IN []
+GROUP BY tenant_id, anonymous_id
+;
+
+
+select * from events;
