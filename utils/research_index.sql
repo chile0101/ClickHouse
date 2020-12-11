@@ -4,17 +4,23 @@ show tables;
 SELECT
     `tenant_id`,
     anonymous_id,
-    utm_campaign,
-    `num_properties.vals`[indexOf(`num_properties.keys`, '{EventsCampaignKeys.TOTAL_VALUE}')] AS total_value
+    utm_campaign
 FROM events_campaign
-WHERE tenant_id = :tenant_id
-    AND utm_campaign = :utm_campaign
-    AND toUnixTimestamp(at) >= :start_time
-    AND toUnixTimestamp(at) <= :end_time;
+WHERE  toUnixTimestamp(at) >=1606262400
+    AND toUnixTimestamp(at) <= 1607212800;
+--302 ms
 
 
-drop table profile_final;
-select * from profile_final;
+SELECT
+    `tenant_id`,
+    anonymous_id,
+    utm_campaign
+FROM events_campaign
+WHERE  at >= '2020-11-25 00:00:00'
+    AND at <= '2020-12-06 00:00:00';
+
+select * from events_campaign ;
 
 
-select * from events_campaign where anonymous_id = 'a1';
+select toUnixTimestamp( '2020-11-25 00:00:00'),
+       toUnixTimestamp('2020-12-06 00:00:00')

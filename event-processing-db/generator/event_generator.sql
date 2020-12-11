@@ -26,9 +26,16 @@ FROM numbers(10)
 ;
 
 truncate table events;
-select * from events;
+
+
+show create table events;
+
+select * from events limit 10;
+
 --------------------------------------------------------
 truncate table events_campaign_engagement;
+
+
 
 
 INSERT INTO events_campaign_engagement
