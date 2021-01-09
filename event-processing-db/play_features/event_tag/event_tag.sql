@@ -276,3 +276,19 @@ select count() from events;
 
 select max(at), min(at) from events order by at desc ;
 select * from events where anonymous_id = 'DF9CBvWUdOmgJb5PjYVFaxQotvR';
+
+
+
+
+
+
+
+select * from events order by at desc ;
+select * from events_conversion order by at desc ;
+select * from events_campaign order by at desc ;
+
+show tables ;
+
+drop table events_c;
+select * from events_c;
+select * from event;

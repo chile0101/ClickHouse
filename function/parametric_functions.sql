@@ -110,3 +110,19 @@ FROM
 )
 ;
 
+
+
+select * from test;
+
+
+insert into test values
+(now(), 1), (now() + 1, 1), (now()+ 2, 2);
+
+insert into test values
+ (now()+ 1000, 5);
+
+
+
+
+
+SELECT sequenceCount('(?1)(?1)(?1)(?t<=2600)(?2)(?t<100)()')(time, number = 1, number = 5) FROM test;

@@ -1,0 +1,5 @@
+tenant_id,config_pipeline_id,config_data_id,execution_time,created_at,window,whole_journey,include_direct,model_name,dimension.keys,dimension.names,value_key,value_value
+1,cf,cd1,2020-12-16 11:29:52,2020-12-16 11:29:52,7,1,1,linear,"['dimension_filter','dimension_filter_value','channel','campaign']","['campaign_grouping','cdp','facebook','c1']",revenue,120
+1,cf,cd1,2020-12-16 11:29:52,2020-12-16 11:29:52,7,1,1,linear,"['dimension_filter','dimension_filter_value','channel','campaign']","['campaign_grouping','cdp','facebook','c2']",revenue,120
+1,cf,cd1,2020-12-16 11:31:34,2020-12-16 11:31:34,7,1,1,linear,"['dimension_filter','dimension_filter_value','channel','campaign']","['campaign_grouping','cdp','facebook','c1']",conversion,120
+1,cf,cd1,2020-12-16 11:31:34,2020-12-16 11:31:34,7,1,1,linear,"['dimension_filter','dimension_filter_value','channel','campaign']","['campaign_grouping','cdp','facebook','c2']",revenue,120

@@ -17,7 +17,8 @@ CREATE TABLE events_conversion
     `num_properties.vals` Array(Float64),
     `arr_properties.keys` Array(LowCardinality(String)),
     `arr_properties.vals` Array(Array(String)),
-    `at`            DateTime64
+    `at`
+    `_timestamp`            DateTime64
 )
 ENGINE = MergeTree()
 PARTITION BY toYYYYMM(at)

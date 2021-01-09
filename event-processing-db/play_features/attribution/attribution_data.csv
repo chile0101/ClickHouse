@@ -1,0 +1,4 @@
+1,cf,cd1,2020-12-16 11:29:52,2020-12-16 11:29:52,7,1,1,linear,"['dimension_filter','dimension_filter_value','channel','campaign']","['campaign_grouping','cdp','facebook','c1']",revenue
+1,cf,cd1,2020-12-16 11:29:52,2020-12-16 11:29:52,7,1,1,linear,"['dimension_filter','dimension_filter_value','channel','campaign']","['campaign_grouping','cdp','facebook','c2']",revenue
+1,cf,cd1,2020-12-16 11:31:34,2020-12-16 11:31:34,7,1,1,linear,"['dimension_filter','dimension_filter_value','channel','campaign']","['campaign_grouping','cdp','facebook','c1']",conversion
+1,cf,cd1,2020-12-16 11:31:34,2020-12-16 11:31:34,7,1,1,linear,"['dimension_filter','dimension_filter_value','channel','campaign']","['campaign_grouping','cdp','facebook','c2']",revenue

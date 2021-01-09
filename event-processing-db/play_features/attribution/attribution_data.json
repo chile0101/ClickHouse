@@ -1,0 +1,63 @@
+[
+  {
+    "tenant_id": 1,
+    "config_pipeline_id": "cf",
+    "config_data_id": "cd1",
+    "execution_time": "2020-12-16 11:29:52",
+    "created_at": "2020-12-16 11:29:52",
+    "window": 7,
+    "whole_journey": 1,
+    "include_direct": 1,
+    "model_name": "linear",
+    "dimension.keys": "['dimension_filter','dimension_filter_value','channel','campaign']",
+    "dimension.names": "['campaign_grouping','cdp','facebook','c1']",
+    "value_key": "revenue",
+    "value_value": 120
+  },
+  {
+    "tenant_id": 1,
+    "config_pipeline_id": "cf",
+    "config_data_id": "cd1",
+    "execution_time": "2020-12-16 11:29:52",
+    "created_at": "2020-12-16 11:29:52",
+    "window": 7,
+    "whole_journey": 1,
+    "include_direct": 1,
+    "model_name": "linear",
+    "dimension.keys": "['dimension_filter','dimension_filter_value','channel','campaign']",
+    "dimension.names": "['campaign_grouping','cdp','facebook','c2']",
+    "value_key": "revenue",
+    "value_value": 120
+  },
+  {
+    "tenant_id": 1,
+    "config_pipeline_id": "cf",
+    "config_data_id": "cd1",
+    "execution_time": "2020-12-16 11:31:34",
+    "created_at": "2020-12-16 11:31:34",
+    "window": 7,
+    "whole_journey": 1,
+    "include_direct": 1,
+    "model_name": "linear",
+    "dimension.keys": "['dimension_filter','dimension_filter_value','channel','campaign']",
+    "dimension.names": "['campaign_grouping','cdp','facebook','c1']",
+    "value_key": "conversion",
+    "value_value": 120
+  },
+  {
+    "tenant_id": 1,
+    "config_pipeline_id": "cf",
+    "config_data_id": "cd1",
+    "execution_time": "2020-12-16 11:31:34",
+    "created_at": "2020-12-16 11:31:34",
+    "window": 7,
+    "whole_journey": 1,
+    "include_direct": 1,
+    "model_name": "linear",
+    "dimension.keys": "['dimension_filter','dimension_filter_value','channel','campaign']",
+    "dimension.names": "['campaign_grouping','cdp','facebook','c2']",
+    "value_key": "revenue",
+    "value_value": 120
+  }
+]
+

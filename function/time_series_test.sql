@@ -22,7 +22,7 @@ FROM (
 
 -- Neghbor
 SELECT number,
-       neighbor(number, 2)
+       neighbor(number, -1, 999)
 FROM system.numbers LIMIT 10;
 
 

@@ -67,4 +67,4 @@ FROM numbers(3)
 
 
 with ['1','2','3'] as arr
-select arr[5]
+select arr[5];

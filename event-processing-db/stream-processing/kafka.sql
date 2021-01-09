@@ -62,15 +62,14 @@
 
 
 
-
-show tables;
-select * from eventify_stag.user_profile where anonymous_id = '1111'
-;
-
-select fromUnixTimestamp64Milli(toInt64(1605322013667));
-
-select * from user_profile where anonymous_id = 'DDqtk7fBzdkADgvdf4MT5KCYvkw';
-
+-- posthog
+kafka-topics.sh --list --bootstrap-server "localhost:9092"
+clickhouse_events_proto
+clickhouse_person
+clickhouse_person_unique_id
+clickhouse_session_recording_events
+events_write_ahead_log
 
 
-select * from profile_num where anonymous_id = 'DDz2ygovDHBsZL2x1Mr6keJNTiE';
+./kafka-console-consumer.sh --bootstrap-server "localhost:9092" --topic clickhouse_events_proto --from-beginning
+./kafka-console-consumer.sh --bootstrap-server "localhost:9092" --topic clickhouse_person --from-beginning

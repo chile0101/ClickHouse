@@ -2,6 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
+      <module fileurl="file://$PROJECT_DIR$/../REPORTS/.idea/REPORTS.iml" filepath="$PROJECT_DIR$/../REPORTS/.idea/REPORTS.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/clickhouse.iml" filepath="$PROJECT_DIR$/.idea/clickhouse.iml" />
       <module fileurl="file://$PROJECT_DIR$/../PYTHON/.idea/python.iml" filepath="$PROJECT_DIR$/../PYTHON/.idea/python.iml" />
     </modules>

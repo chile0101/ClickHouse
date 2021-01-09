@@ -3,6 +3,7 @@
   <component name="VcsDirectoryMappings">
     <mapping directory="" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/../PYTHON" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/posthog-python" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/../python" vcs="Git" />
   </component>
 </project>
