@@ -8,5 +8,6 @@
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="python" />
     <orderEntry type="module" module-name="REPORTS" />
+    <orderEntry type="module" module-name="PYTHON" />
   </component>
 </module>
