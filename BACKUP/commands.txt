@@ -1,0 +1,114 @@
+sudo apt install ./slack-desktop-4.12.1-amd64.deb
+htop
+top
+sudo apt-get update
+clear
+sudo apt-get update $ sudo apt-get install git
+sudo apt-get update
+sudo apt-get install git
+git -v
+git --version
+git config --global user.name "chi.le"
+git config --global user.email "chi.le@primedata.ai"
+git clone git@github.com:primedata-ai/event-processing.git
+cd ~
+ssh-keygen -t rsa
+ls
+pwd
+cd .ssh/
+ls
+cat id_rsa.pub
+git clone git@github.com:primedata-ai/event-processing.git
+sudo apt-get install ibus-unikey
+ibus restart
+sudo apt-get remove docker docker-engine docker.io containerd runc
+sudo apt-get update
+sudo apt-get install     apt-transport-https     ca-certificates     curl     gnupg-agent     software-properties-common
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+sudo apt-key fingerprint 0EBFCD88
+sudo add-apt-repository    "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
+   $(lsb_release -cs) \
+   stable"
+sudo apt-get update
+sudo apt-get install docker-ce docker-ce-cli containerd.io
+sudo docker run hello-world
+sudo curl -L "https://github.com/docker/compose/releases/download/1.27.4/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+sudo chmod +x /usr/local/bin/docker-compose
+docker-compose --version
+bash Anaconda-latest-Linux-x86_64.sh
+bash Anaconda3-2020.11-Linux-x86_64.sh
+sudo apt-get install python3-distutils
+sudo apt-get install python3-apt
+sudo dpkg -i gitkraken-amd64.deb
+ls
+pwd
+which python3
+python3 install -r requirements.txt
+pip3 install -r requirements.txt
+sudo apt install zsh
+echo $SHELL
+chsh -s $(which zsh)
+logout
+python3 install -r requirements.txt
+pwd
+git checkout segment-builder
+git s
+git status
+git s
+clear
+export | grep CONFI
+git pull origin segment-builder
+htop
+clear
+docker-compose up -d
+sudo docker-compose up -d
+export | grep CONFI
+git a .
+git add .
+git cm 'added get profiles by sample ids function'
+git s
+git commit -m  'added get profiles by sample ids function'
+git push origin segment-builder
+git pull origin segment-builder
+git status
+git commit -m 'merged with brian'
+git push origin segment-builder
+cd /home/ubuntu/Projects/pem/
+ls
+sudo apt-get install openvpn
+openvpn -version
+sudo apt-get --puge remove openvpn
+sudo apt-get --purge remove openvpn
+sudo apt-get install network-manager-openvpn-gnome
+sudo openvpn --config /home/ubuntu/Projects/pem/chile-118.68.168.185.ovpn
+kubectl port-forward svc/consul-ui 8500:80
+kubectl port-forward svc/consul-ui 8501:80
+curl -LO https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/amd64/kubectl\
+chmod +x ./kubectl
+udo mv ./kubectl /usr/local/bin/kubectl
+sudo mv ./kubectl /usr/local/bin/kubectl
+kubectl version
+which kubectl
+mkdir ~/.kubectl
+cd .kubectl/
+mkdir config
+cp /home/ubuntu/Projects/pem/config-primedata /home/ubuntu/.kubectl/config/
+kubectl port-forward svc/consul-ui 8500:80
+ls -la
+cd config/
+ls -la
+cat config-primedata
+mkdir ~/.kube
+cp ./config-primedata ~/.kube/config
+ls -la
+kubectl get nodes
+vi /etc/hosts
+sudo vi /etc/hosts
+sudo nano /etc/host
+sudo nano /etc/hosts
+kubectl get nodes
+ssh -T root@10.110.1.1
+kubectl get pods
+nano /etc/hosts
+sudo nano /etc/hosts
+kubectl get pods
