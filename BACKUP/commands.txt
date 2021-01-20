@@ -75,10 +75,7 @@ git commit -m 'merged with brian'
 git push origin segment-builder
 cd /home/ubuntu/Projects/pem/
 ls
-sudo apt-get install openvpn
-openvpn -version
-sudo apt-get --puge remove openvpn
-sudo apt-get --purge remove openvpn
+
 sudo apt-get install network-manager-openvpn-gnome
 sudo openvpn --config /home/ubuntu/Projects/pem/chile-118.68.168.185.ovpn
 kubectl port-forward svc/consul-ui 8500:80
@@ -106,6 +103,9 @@ vi /etc/hosts
 sudo vi /etc/hosts
 sudo nano /etc/host
 sudo nano /etc/hosts
+
+add to file: 10.110.1.11      lb-apiserver.kubernetes.local
+
 kubectl get nodes
 ssh -T root@10.110.1.1
 kubectl get pods
