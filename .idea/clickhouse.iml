@@ -11,4 +11,7 @@
     <orderEntry type="module" module-name="REPORTS" />
     <orderEntry type="module" module-name="PYTHON" />
   </component>
+  <component name="PackageRequirementsSettings">
+    <option name="requirementsPath" value="" />
+  </component>
 </module>

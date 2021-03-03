@@ -1,3 +1,9 @@
+drop table events;
+select * from events;
+drop database eventify_dev;
+create database eventify_dev;
+
+
 create table events
 (
     visitor_id String,
