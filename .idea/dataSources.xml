@@ -19,13 +19,6 @@
       <jdbc-driver>ru.yandex.clickhouse.ClickHouseDriver</jdbc-driver>
       <jdbc-url>jdbc:clickhouse://103.57.210.44:8123</jdbc-url>
     </data-source>
-    <data-source source="LOCAL" name="PostgreSQL - posthog@10.110.1.3" uuid="aaf63d76-26c9-40a7-a943-1bf2a877877c">
-      <driver-ref>postgresql</driver-ref>
-      <synchronize>true</synchronize>
-      <jdbc-driver>org.postgresql.Driver</jdbc-driver>
-      <jdbc-url>jdbc:postgresql://10.110.1.3:55432/posthog</jdbc-url>
-      <working-dir>$ProjectFileDir$</working-dir>
-    </data-source>
     <data-source source="LOCAL" name="posthog_localhost" uuid="1280e8c3-a322-4929-89da-1397733eb870">
       <driver-ref>clickhouse</driver-ref>
       <synchronize>true</synchronize>
@@ -45,6 +38,13 @@
       <synchronize>true</synchronize>
       <jdbc-driver>ru.yandex.clickhouse.ClickHouseDriver</jdbc-driver>
       <jdbc-url>jdbc:clickhouse://127.0.0.1:8123</jdbc-url>
+      <working-dir>$ProjectFileDir$</working-dir>
+    </data-source>
+    <data-source source="LOCAL" name="eventify_stag@10.110.1.5" uuid="8ff0aefe-abf6-4c15-9955-649f4a9bd4f4">
+      <driver-ref>postgresql</driver-ref>
+      <synchronize>true</synchronize>
+      <jdbc-driver>org.postgresql.Driver</jdbc-driver>
+      <jdbc-url>jdbc:postgresql://10.110.1.5:5432/eventify_stag</jdbc-url>
       <working-dir>$ProjectFileDir$</working-dir>
     </data-source>
   </component>

@@ -591,3 +591,5 @@ insert into profile_num values ('t3', 1, 'age', 1, now64());
 insert into profile_str values ('t4', 1, 'gender', 'g', now64());
 insert into profile_num values ('t4', 1, 'revenue', 1, now64());
 insert into profile_num values ('t4', 1, 'age', 2, now64());
+
+select * from eventify.events;
