@@ -1,0 +1,5 @@
+- raw string
+- match
+- search (useful)
+- test case (positive, negative)
+- findall

@@ -1,1 +1,4 @@
-print([1,2] + None)
+import re
+
+s = '(name)is(age)yearsold'
+

@@ -158,6 +158,56 @@ from Employees
 where manager_id in d2
 ) as d3
 
+;
+
+
+show tables;
+select * from events where anonymous_id = '1qSWf6zv0OdtIrxPLvbNbAPM5S2';
+
+select * from profile_num where anonymous_id = '1qSWf6zv0OdtIrxPLvbNbAPM5S2';
+select * from profile_str where anonymous_id = '1qSWf6zv0OdtIrxPLvbNbAPM5S2';
+
+
+
+
+select str_val as value
+from profile_str_final_v
+where tenant_id = 1 and str_key = 'email'
+
+and anonymous_id in (
+select
+   anonymous_id
+from
+(
+  select anonymous_id,
+        groupArray(num_key) as keys,
+        groupArray(num_val) as vals
+  from profile_num_final_v
+  where tenant_id = 1
+        and num_key in ['age']
+  group by tenant_id, anonymous_id
+)
+where lessOrEquals(vals[indexOf(keys, 'age')],1)
+)
+
+group by str_val
+order by count(str_val) desc
+limit 1
+
+
+#262. Trips and Users
+
+with reqs as (
+    select Client_Id, Status, Banned, Role, Request_at
+    from Trips t
+             inner join Users u
+                        on t.Client_Id = u.Users_Id
+    where Banned = 'No' and Request_at between '2013-10-01' and '2013-10-03'
+)
+select Request_at as Day, round(count(If(Status like 'cancelled_by_%', 1, NULL))/ count(*), 2) as 'Cancellation Rate'
+from reqs
+group by Request_at
+
 
 
 

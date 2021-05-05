@@ -26,11 +26,11 @@
       <jdbc-url>jdbc:clickhouse://localhost:8123/posthog</jdbc-url>
       <working-dir>$ProjectFileDir$</working-dir>
     </data-source>
-    <data-source source="LOCAL" name="posthog@localhost" uuid="c8e7a569-e10f-4df7-858f-5368ed053576">
+    <data-source source="LOCAL" name="@localhost [2]" uuid="c8e7a569-e10f-4df7-858f-5368ed053576">
       <driver-ref>postgresql</driver-ref>
       <synchronize>true</synchronize>
       <jdbc-driver>org.postgresql.Driver</jdbc-driver>
-      <jdbc-url>jdbc:postgresql://localhost:5432/posthog</jdbc-url>
+      <jdbc-url>jdbc:postgresql://localhost:5432/</jdbc-url>
       <working-dir>$ProjectFileDir$</working-dir>
     </data-source>
     <data-source source="LOCAL" name="posthog_server" uuid="4f1c939b-ede5-4f0b-8857-6d74f359fdb9">
@@ -45,6 +45,27 @@
       <synchronize>true</synchronize>
       <jdbc-driver>org.postgresql.Driver</jdbc-driver>
       <jdbc-url>jdbc:postgresql://10.110.1.5:5432/eventify_stag</jdbc-url>
+      <working-dir>$ProjectFileDir$</working-dir>
+    </data-source>
+    <data-source source="LOCAL" name="maria_db" uuid="d01b1142-60b4-49c6-aa82-0bd5fbdb2e06">
+      <driver-ref>mariadb</driver-ref>
+      <synchronize>true</synchronize>
+      <jdbc-driver>org.mariadb.jdbc.Driver</jdbc-driver>
+      <jdbc-url>jdbc:mariadb://localhost:3306</jdbc-url>
+      <working-dir>$ProjectFileDir$</working-dir>
+    </data-source>
+    <data-source source="LOCAL" name="SQLite - identifier.sqlite" uuid="5864c221-70ff-476a-b7f4-c709739d4164">
+      <driver-ref>sqlite.xerial</driver-ref>
+      <synchronize>true</synchronize>
+      <jdbc-driver>org.sqlite.JDBC</jdbc-driver>
+      <jdbc-url>jdbc:sqlite:identifier.sqlite</jdbc-url>
+      <working-dir>$ProjectFileDir$</working-dir>
+    </data-source>
+    <data-source source="LOCAL" name="live_clickhouse" uuid="ff7db317-f469-43cd-bdcb-6196348b1653">
+      <driver-ref>clickhouse</driver-ref>
+      <synchronize>true</synchronize>
+      <jdbc-driver>ru.yandex.clickhouse.ClickHouseDriver</jdbc-driver>
+      <jdbc-url>jdbc:clickhouse://localhost:48123</jdbc-url>
       <working-dir>$ProjectFileDir$</working-dir>
     </data-source>
   </component>
