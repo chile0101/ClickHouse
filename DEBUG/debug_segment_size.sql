@@ -1,0 +1,1 @@
+chmod +x ./live_fwd.sh && ./live_fwd.sh
